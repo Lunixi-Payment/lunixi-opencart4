@@ -44,7 +44,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           repository: Lunixi-Payment/lunixi-php
-          ref: v0.29.3
+          ref: v0.29.5
           path: .ci-sdk
       - name: Pinned native platform
         run: |

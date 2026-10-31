@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.2 — 2026-10-31
+
+- Make the existing on-site Lunixi form the documented default; retain explicitly selected optional hosted checkout.
+- Use PHP SDK 0.29.5 to consume the validated backend `paymentPageUrl` exactly, with encrypted persistence and no token-to-URL reconstruction.
+- Preserve existing checkout request hashes, idempotency keys, mode settings and informational 3DS/split returns; missing legacy hosted URLs require reconciliation.
+
 ## 0.1.1 — 2026-10-31
 
 - Accept the gateway informational POST return through a bounded, stateless same-origin 303 adapter. Ignore submitted payment fields and require native ownership on the resumed GET.

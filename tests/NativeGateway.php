@@ -6,6 +6,7 @@ use Lunixi\OpenCart4\Vendor\Lunixi\Sdk\Exception\ApiException;
 /** Offline gateway boundary only. All OpenCart models/DB/events are the official real implementation. */
 final class NativeGateway implements HttpClientInterface
 {
+    public ?string $paymentPageUrl = 'https://pay.lunixi.com/payment/server-issued-page-0123456789';
     public array $payments = [];
     public array $requests = [];
     public bool $lostCreate = false;
@@ -29,7 +30,11 @@ final class NativeGateway implements HttpClientInterface
                 $this->lostCreate = false;
                 throw new ApiException('Synthetic lost create response', 0);
             }
-            return $this->json(201, ['data' => ['paymentId' => $id, 'token' => 'synthetic-checkout-token']]);
+            $result = ['paymentId' => $id, 'token' => 'synthetic-checkout-token'];
+            if ($this->paymentPageUrl !== null) {
+                $result['paymentPageUrl'] = $this->paymentPageUrl;
+            }
+            return $this->json(201, ['data' => $result]);
         }
         if (preg_match('~/api/v1/payments/([^/]+)(?:/(capture|refund|void))?$~', $path, $match)) {
             $id = $match[1];

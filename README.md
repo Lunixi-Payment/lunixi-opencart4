@@ -2,7 +2,7 @@
 
 # Lunixi Payments for OpenCart 4
 
-Native payment extension **0.1.1** for **OpenCart 4.1.0.4**. Uses the embedded Lunixi payment form or redirects to `https://pay.lunixi.com/payment/<token>`. Payment methods, eligible meal cards, shopping credit, installments, insurance and multi-card availability remain managed in the Lunixi merchant panel and form. This adapter does not collect card numbers/CVV or duplicate payment-method switches.
+Native payment extension **0.1.2** for **OpenCart 4.1.0.4**. Opens the existing Lunixi form on the merchant website by default, with optional redirect to the validated backend `paymentPageUrl`. Payment methods, eligible meal cards, shopping credit, installments, insurance and multi-card availability remain managed in the Lunixi merchant panel and form. This adapter does not collect card numbers/CVV or duplicate payment-method switches.
 
 [Turkish guide](docs/README.tr.md) · [Documentation](https://docs.lunixi.com/en/sdks/opencart4) · [Source](https://github.com/Lunixi-Payment/lunixi-opencart4)
 
@@ -14,7 +14,7 @@ Native payment extension **0.1.1** for **OpenCart 4.1.0.4**. Uses the embedded L
 | PHP | 64-bit **8.3+**, within the platform's supported range |
 | Extensions | `bcmath`, `curl`, `json`, `sodium`, `mysqli` |
 | Database | MySQL/MariaDB, **all shop tables InnoDB**, one native connection |
-| Shared payment core | Namespace-isolated `lunixi/php-sdk` **0.29.3** |
+| Shared payment core | Namespace-isolated `lunixi/php-sdk` **0.29.5** |
 | Local native acceptance | PHP 8.4.1, MariaDB 11, official platform install, offline gateway transport |
 
 Compatibility preflight rejects a different platform version, modified native order model, nontransactional tables, and unreviewed active order/history, total or fraud hooks. Default audited native activity/statistics hooks remain active; native fraud can hold fulfillment even after capture. Third-party themes/extensions require a separate compatibility review. Native recurring/subscription carts are unavailable because automatic recurring billing is not implemented by this extension. This source release does not imply OpenCart Marketplace acceptance or a live merchant certification.
@@ -27,7 +27,7 @@ Compatibility preflight rejects a different platform version, modified native or
 4. Upload **`lunixi.ocmod.zip`** through **Extensions → Installer**, then install **Lunixi Payments** under **Extensions → Payments**. Do not rename the ZIP: OpenCart 4 uses its basename to create the extension/lunixi namespace. Merchants do not need Composer.
 5. Give the intended administrator access/modify permission to `extension/lunixi/payment/lunixi`. Capture/refund/void also require modify permission to `sale/order`.
 6. Edit Lunixi Payments; select the native store, enter merchant ID, key ID, Ed25519 private key and webhook secret. Secret fields stay blank on reload; blank values retain the encrypted store-specific credential profile. Never share credentials between stores.
-7. Choose embedded or hosted checkout and optional preauthorization. Installation creates separate localized awaiting/authorized/review statuses outside native processing/complete sets. Map **paid** to a processing/complete status; all other mappings must be outside those sets. Preauthorization and partial capture remain on hold.
+7. Keep embedded checkout as the default, or explicitly choose optional hosted checkout, and select optional preauthorization. Installation creates separate localized awaiting/authorized/review statuses outside native processing/complete sets. Map **paid** to a processing/complete status; all other mappings must be outside those sets. Preauthorization and partial capture remain on hold.
 8. Register the HTTPS webhook shown in the module, such as `https://shop.example/index.php?route=extension/lunixi/payment/lunixi.webhook`. Preserve raw request bytes and all `X-Lunixi-*` headers through the reverse proxy; allow retryable delivery.
 9. Install the worker below, verify its logs/exit behavior, then enable the payment method. Configure eligible methods in the Lunixi panel.
 
@@ -65,7 +65,7 @@ php tools/check-artifact.php
 composer audit --working-dir=tools
 ```
 
-The build pins SDK 0.29.3 and bundles a scoped copy. If testing an unreleased public SDK source checkout, provide the explicit `SDK_SOURCE=/absolute/public-sdk-checkout` environment variable; this path is not copied into public artifacts. `php-scoper` and Composer are build tools only. The resulting merchant ZIP is in `dist/`.
+The build pins SDK 0.29.5 and bundles a scoped copy. If testing an unreleased public SDK source checkout, provide the explicit `SDK_SOURCE=/absolute/public-sdk-checkout` environment variable; this path is not copied into public artifacts. `php-scoper` and Composer are build tools only. The resulting merchant ZIP is in `dist/`.
 
 [Native acceptance instructions](docs/TESTING.md) install the exact official platform in an isolated schema and test the **built ZIP**, real native models/events/stock and a synthetic external gateway. No production DB or live payment key is used. PHPStan level 5 checks native glue against actual platform classes; the shared core has its own independent suite. CI pins action commits and the platform source SHA.
 
@@ -78,3 +78,9 @@ Financial outcomes that remain uncertain are held for review. `FAILED` alone doe
 Lunixi hosted, split and 3DS flows return by **POST** to the generated `returned` route. This route alone accepts an informational cross-site POST without a session/CSRF token: it ignores the complete form body and immediately sends **303** to a relative same-origin GET of that route, keeping only the numeric `order_id` from the original callback URL. It does not fetch a payment, disclose order data or change financial state. The GET retains native session/customer/store/order ownership and authenticated payment reconciliation. Checkout/admin POST protections remain required; browser success fields never prove payment.
 
 The application rejects declared callback bodies above **64 KiB**. Configure the HTTPS reverse proxy to enforce the same wire-body limit on this route, including chunked requests; keep the signed webhook's separate 1 MiB limit. Do not convert the callback to a checkout/confirm POST or remove ownership checks from GET.
+
+## Checkout mode and existing attempts
+
+Embedded checkout is the default; optional hosted checkout uses the exact validated `paymentPageUrl` returned by the backend. Both modes open the same Lunixi form and support the methods, multi-card, installments and insurance enabled for the merchant. None of these features requires redirecting. Never derive a payment-page URL from the browser token.
+
+Existing explicit hosted settings are retained. Checkout mode, callback, preauthorization and locale are bound to an attempt's original request. Changing them cannot reset its request hash or idempotency key. If an older attempt has no stored backend payment-page URL, optional redirect fails closed: reconcile that attempt rather than constructing a URL, deleting history or creating a replacement key. Embedded rendering still uses the protected browser configuration. Keep the signed webhook, authenticated settlement checks and informational 3DS/split return routes.

@@ -96,7 +96,7 @@ final class NativeAcceptanceTest extends TestCase
         $id = $this->order();
         $session = $this->kernel->start($id, 'https://merchant.example/return');
         self::assertSame(10, $this->stock());
-        self::assertSame('https://pay.lunixi.com/payment/synthetic-checkout-token', $session->hostedUrl());
+        self::assertSame($this->gateway->paymentPageUrl, $session->hostedUrl());
         $key = $this->kernel->orders()->orderKey($id);
         [$raw, $headers] = $this->event('evt-native', $session->paymentId, $key);
         $service = new CheckoutService($this->client, $this->kernel->store(), Kernel::secretBox());
@@ -195,13 +195,56 @@ final class NativeAcceptanceTest extends TestCase
         $this->registry->get('config')->set('payment_lunixi_preauth', 1);
         $id = $this->order();
         $session = $this->kernel->start($id, 'https://merchant.example/return');
-        self::assertSame('https://pay.lunixi.com/payment/synthetic-checkout-token', $session->hostedUrl());
+        self::assertSame($this->gateway->paymentPageUrl, $session->hostedUrl());
         self::assertSame('authorized', $this->kernel->reconcile($id, false)->state);
         self::assertFalse($this->kernel->browserComplete($id));
         $void = $this->kernel->operation($id, 'void', null);
         self::assertSame('confirmed', $void['state']);
         self::assertSame(10, $this->stock());
         self::assertFalse($this->kernel->browserComplete($id));
+    }
+    public function testBackendHostedUrlIsEncryptedCachedAndBoundToOriginalMode(): void
+    {
+        $this->registry->get('config')->set('payment_lunixi_mode', 'hosted');
+        $id = $this->order();
+        $key = $this->kernel->orders()->orderKey($id);
+        $session = $this->kernel->start($id, 'https://merchant.example/return');
+        self::assertSame($this->gateway->paymentPageUrl, $session->hostedUrl());
+        self::assertNotSame('https://pay.lunixi.com/payment/' . $session->token, $session->hostedUrl());
+        $record = $this->kernel->store()->transaction($key, fn() => $this->kernel->store()->load($key));
+        self::assertStringNotContainsString('server-issued-page', $record['paymentPageUrl']);
+        $requests = count($this->gateway->requests);
+        $this->gateway->paymentPageUrl = 'https://evil.invalid/payment/server-issued-page-0123456789';
+        self::assertSame($session->hostedUrl(), $this->kernel->start($id, 'https://merchant.example/return')->hostedUrl());
+        self::assertSame($requests, count($this->gateway->requests));
+        $this->registry->get('config')->set('payment_lunixi_mode', 'embedded');
+        try {
+            $this->kernel->start($id, 'https://merchant.example/return');
+            self::fail('Changed presentation replaced a frozen attempt.');
+        } catch (\RuntimeException $expected) {
+        }
+        $after = $this->kernel->store()->transaction($key, fn() => $this->kernel->store()->load($key));
+        self::assertSame($record['key'], $after['key']);
+        self::assertSame($record['requestHash'], $after['requestHash']);
+        self::assertSame($requests, count($this->gateway->requests));
+    }
+    public function testMissingOrUnsafeBackendHostedUrlCannotBecomeARedirect(): void
+    {
+        $this->registry->get('config')->set('payment_lunixi_mode', 'hosted');
+        foreach ([null, 'https://pay.lunixi.com.evil.invalid/payment/server-issued-page-0123456789', 'https://pay.lunixi.com/payment/server-issued-page-0123456789?next=evil'] as $url) {
+            $this->gateway->paymentPageUrl = $url;
+            $id = $this->order();
+            try {
+                $this->kernel->start($id, 'https://merchant.example/return')->hostedUrl();
+                self::fail('Missing or unsafe hosted URL was accepted.');
+            } catch (\RuntimeException $expected) {
+            }
+            self::assertSame(10, $this->stock());
+            $key = $this->kernel->orders()->orderKey($id);
+            $record = $this->kernel->store()->transaction($key, fn() => $this->kernel->store()->load($key));
+            self::assertNotEmpty($record['key']);
+            self::assertNotSame('paid', $record['state']);
+        }
     }
     public function testSignedTamperUnknownHooksAndFrozenSnapshotFailClosed(): void
     {
