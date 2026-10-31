@@ -2,7 +2,7 @@
 
 # OpenCart 4 için Lunixi Payments
 
-**0.1.0**, özgün **OpenCart 4.1.0.4** sipariş modeli için hazırlanmış yerel ödeme eklentisidir. 64 bit PHP **8.3+**, BCMath, cURL, JSON, Sodium, MySQLi ve tüm mağaza tablolarında **InnoDB** gerekir. Paket, ad alanı ayrılmış PHP SDK **0.29.3** içerir; mağazada Composer gerekmez.
+**0.1.1**, özgün **OpenCart 4.1.0.4** sipariş modeli için hazırlanmış yerel ödeme eklentisidir. 64 bit PHP **8.3+**, BCMath, cURL, JSON, Sodium, MySQLi ve tüm mağaza tablolarında **InnoDB** gerekir. Paket, ad alanı ayrılmış PHP SDK **0.29.3** içerir; mağazada Composer gerekmez.
 
 ## Kurulum
 
@@ -47,3 +47,9 @@ Yayımlanmamış ortak SDK'yı test etmek için yalnız derleme sırasında `SDK
 Eklenti GPL-3.0-or-later, paketlenen PHP SDK MIT lisanslıdır.
 
 Finansal sonucu belirsiz işlemler incelemede tutulur. `FAILED` tek başına yeni denemeye izin vermez; herkese açık ödeme sorgusu kesin sağlayıcı sonuç kanıtını döndürmez. Sonuçlanmamış finansal tekrarlar 23 saat sonra durur; kimliği doğrulanmış GET mutabakatı devam eder. Zaman aşımı, form token süresi veya tarayıcı dönüşü yeni finansal anahtar üretmez.
+
+## Sağlayıcı tarayıcı dönüşü
+
+Lunixi yönlendirmeli, çoklu kart ve 3DS akışları üretilen `returned` adresine **POST** ile döner. Yalnız bu bilgilendirici dönüş ucu oturum/CSRF token olmadan POST kabul eder: form gövdesinin tamamını yok sayıp özgün dönüş URL'sindeki sayısal `order_id` ile aynı sitedeki göreli GET adresine **303** döner. Ödeme sorgulamaz, sipariş verisi göstermez ve finansal kayıt değiştirmez. GET aşamasında yerel oturum/müşteri/mağaza/sipariş sahipliği ve kimlik doğrulamalı ödeme sorgusu korunur. Checkout/yönetici POST korumaları devam eder; tarayıcının başarı alanları ödeme kanıtı değildir.
+
+Uygulama dönüşün bildirilen gövdesi **64 KiB** üzerindeyse reddeder. HTTPS proxy'de bu uç için chunked istekleri de kapsayan aynı ağ gövdesi sınırını uygulayın; imzalı webhook'un ayrı 1 MiB sınırını koruyun. Dönüşü checkout/confirm POST adresine çevirmeyin, GET sahiplik kontrolünü kaldırmayın.

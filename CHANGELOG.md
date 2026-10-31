@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.1 — 2026-10-31
+
+- Accept the gateway informational POST return through a bounded, stateless same-origin 303 adapter. Ignore submitted payment fields and require native ownership on the resumed GET.
+- Verify fresh native activation and clean CI environments.
+
 ## 0.1.0 — 2026-10-31
 
 - Native OpenCart 4.1.0.4 embedded/hosted Lunixi form and preauthorization.

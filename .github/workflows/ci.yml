@@ -19,10 +19,10 @@ jobs:
           --health-interval=5s --health-timeout=5s --health-retries=30
     env:
       LUNIXI_NATIVE_TEST_DESTRUCTIVE: '1'
-      LUNIXI_TEST_DB: ${{ runner.temp }}/lunixi-acceptance-db.json
+      LUNIXI_TEST_DB: /tmp/lunixi-opencart4-acceptance-db.json
       LUNIXI_TEST_DATABASE_PASSWORD: synthetic-ci-disposable-password
-      OPENCART_SOURCE: ${{ runner.temp }}/opencart-source
-      LUNIXI_TEST_SITE: ${{ runner.temp }}/opencart-site
+      OPENCART_SOURCE: /tmp/lunixi-opencart4-source
+      LUNIXI_TEST_SITE: /tmp/lunixi-opencart4-site
       SDK_SOURCE: ${{ github.workspace }}/.ci-sdk
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -54,4 +54,5 @@ jobs:
       - run: php tools/vendor/bin/phpunit --bootstrap tests/native_bootstrap.php tests/NativeAcceptanceTest.php
       - run: php tests/admin-native.php
       - run: php tests/cli-native.php
+      - run: php tests/return-http.php
       - run: php tools/vendor/bin/phpstan analyse --no-progress

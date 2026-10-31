@@ -19,6 +19,7 @@ php tests/prepare-fraud.php
 php tools/vendor/bin/phpunit --bootstrap tests/native_bootstrap.php tests/NativeAcceptanceTest.php
 php tests/admin-native.php
 php tests/cli-native.php
+php tests/return-http.php
 php tools/vendor/bin/phpstan analyse --no-progress
 composer audit --working-dir=tools
 ```
@@ -28,3 +29,5 @@ Official source checkouts need their own `composer install --no-dev` before fixt
 The destructive opt-in permits installation and native test-only engine conversion in the dedicated schema. It is not a production migration command. The fixture installer passes random synthetic credentials in PHP memory to the official installer; it does not put DB passwords in a shell command. Native acceptance includes exact persisted decimal FX/ISO precision, encrypted profiles, MyISAM preflight, rollback after real stock/history writes, signed tamper/replay/collision, concurrent child-process event consumption, native fraud holds, queued capture, delayed confirmation, partial/full refunds/restock, void, overrefund rejection, changed-order browser denial and lost-response webhook recovery. The separate admin process uses real native users/models/controllers/Twig to check install, form, native token, custom nonce, finance permissions and uninstall retention.
 
 No live gateway charge, OpenCart Marketplace review or email delivery service is exercised by this offline suite. Native mail methods are dispatched only by the post-commit outbox worker. Review SMTP configuration independently on staging.
+
+`return-http.php` starts a loopback PHP server against the actual installed native `index.php`, emulating trusted TLS termination only in its test router. It sends cross-site POST without cookies/CSRF, checks fixed relative303/ignored forged fields, rejects an oversized body and compares financial/native order/history/stock table snapshots. No live gateway is used.

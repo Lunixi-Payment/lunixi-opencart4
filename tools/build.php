@@ -25,7 +25,7 @@ if(!is_file($runtime.'/sdk/Commerce/CheckoutService.php')){throw new RuntimeExce
 file_put_contents($runtime.'/.htaccess',"Require all denied\n");
 ocCopy($root.'/docs',$output.'/docs');ocCopy($root.'/.github/assets',$output.'/.github/assets');
 foreach(['README.md','LICENSE','CHANGELOG.md','SECURITY.md']as$file){if(is_file($root.'/'.$file)){ocCopy($root.'/'.$file,$output.'/'.$file);}}
-file_put_contents($output.'/release.json',json_encode(['module'=>'lunixi-opencart4','version'=>'0.1.0','opencart'=>'4.1.0.4','sdk'=>'0.29.3','php_min'=>'8.3','merchant_composer_required'=>false],JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES));
+file_put_contents($output.'/release.json',json_encode(['module'=>'lunixi-opencart4','version'=>'0.1.1','opencart'=>'4.1.0.4','sdk'=>'0.29.3','php_min'=>'8.3','merchant_composer_required'=>false],JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES));
 if(!is_dir($root.'/dist')){mkdir($root.'/dist');}
 $target=$root.'/dist/lunixi.ocmod.zip';$zip=new ZipArchive();if($zip->open($target,ZipArchive::CREATE|ZipArchive::OVERWRITE)!==true){throw new RuntimeException('Cannot create native ZIP.');}
 $files=[];foreach(new RecursiveIteratorIterator(new RecursiveDirectoryIterator($output,FilesystemIterator::SKIP_DOTS))as$file){if($file->isFile()){$files[]=$file->getPathname();}}sort($files,SORT_STRING);

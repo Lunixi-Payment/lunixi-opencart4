@@ -2,7 +2,7 @@
 
 # Lunixi Payments for OpenCart 4
 
-Native payment extension **0.1.0** for **OpenCart 4.1.0.4**. Uses the embedded Lunixi payment form or redirects to `https://pay.lunixi.com/payment/<token>`. Payment methods, eligible meal cards, shopping credit, installments, insurance and multi-card availability remain managed in the Lunixi merchant panel and form. This adapter does not collect card numbers/CVV or duplicate payment-method switches.
+Native payment extension **0.1.1** for **OpenCart 4.1.0.4**. Uses the embedded Lunixi payment form or redirects to `https://pay.lunixi.com/payment/<token>`. Payment methods, eligible meal cards, shopping credit, installments, insurance and multi-card availability remain managed in the Lunixi merchant panel and form. This adapter does not collect card numbers/CVV or duplicate payment-method switches.
 
 [Turkish guide](docs/README.tr.md) · [Documentation](https://docs.lunixi.com/en/sdks/opencart4) · [Source](https://github.com/Lunixi-Payment/lunixi-opencart4)
 
@@ -72,3 +72,9 @@ The build pins SDK 0.29.3 and bundles a scoped copy. If testing an unreleased pu
 License: GPL-3.0-or-later for this native extension; bundled SDK retains its MIT license. [Security policy](SECURITY.md).
 
 Financial outcomes that remain uncertain are held for review. `FAILED` alone does not authorize a new attempt: the public payment read does not expose definitive provider outcome certainty. Unresolved financial retries stop after 23 hours; authenticated GET reconciliation remains available. A timeout, token expiry or browser callback never generates a fresh financial key.
+
+## Provider browser return
+
+Lunixi hosted, split and 3DS flows return by **POST** to the generated `returned` route. This route alone accepts an informational cross-site POST without a session/CSRF token: it ignores the complete form body and immediately sends **303** to a relative same-origin GET of that route, keeping only the numeric `order_id` from the original callback URL. It does not fetch a payment, disclose order data or change financial state. The GET retains native session/customer/store/order ownership and authenticated payment reconciliation. Checkout/admin POST protections remain required; browser success fields never prove payment.
+
+The application rejects declared callback bodies above **64 KiB**. Configure the HTTPS reverse proxy to enforce the same wire-body limit on this route, including chunked requests; keep the signed webhook's separate 1 MiB limit. Do not convert the callback to a checkout/confirm POST or remove ownership checks from GET.

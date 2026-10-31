@@ -73,6 +73,25 @@ class Lunixi extends \Opencart\System\Engine\Controller
     }
     public function returned()
     {
+        // Lunixi returns with POST. A cross-site POST may omit the SameSite=Lax
+        // session cookie, so this informational hop must not require ownership,
+        // read the body, construct the gateway client, or change an order.
+        if (($this->request->server['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+            $this->response->addHeader('Cache-Control: no-store');
+            $length = $this->request->server['CONTENT_LENGTH'] ?? '0';
+            if (!is_scalar($length) || !ctype_digit((string) $length) || (int) $length > 65536) {
+                $this->response->addHeader('HTTP/1.1 413 Content Too Large');
+                $this->response->setOutput('Callback request too large.');
+                return;
+            }
+            $candidate = $this->request->get['order_id'] ?? '';
+            $id = is_string($candidate) && ctype_digit($candidate) && strlen($candidate) <= 10 ? (int) $candidate : 0;
+            // A relative Location cannot inherit an attacker-supplied Host or URL.
+            // The GET below retains the native session/customer/order checks.
+            header('Cache-Control: no-store');
+            $this->response->redirect('?route=extension/lunixi/payment/lunixi.returned&order_id=' . $id, 303);
+            return;
+        }
         // Browser-supplied success/status/payment IDs are deliberately ignored.
         $this->load->language('extension/lunixi/payment/lunixi');
         $this->response->addHeader('Cache-Control: no-store');
