@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.3 — 2026-10-31
+
+- Bundle published PHP SDK 0.29.6, including the PHP 8.5 cURL handle-lifecycle compatibility correction.
+- Preserve embedded checkout defaults, exact backend `paymentPageUrl` forwarding, stored settings and financial/idempotency behavior.
+- Rebuild the standalone scoped merchant package; merchants still do not need Composer.
+
 ## 0.1.2 — 2026-10-31
 
 - Make the existing on-site Lunixi form the documented default; retain explicitly selected optional hosted checkout.

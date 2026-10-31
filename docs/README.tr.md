@@ -2,7 +2,7 @@
 
 # OpenCart 4 için Lunixi Payments
 
-**0.1.2**, özgün **OpenCart 4.1.0.4** sipariş modeli için hazırlanmış yerel ödeme eklentisidir. 64 bit PHP **8.3+**, BCMath, cURL, JSON, Sodium, MySQLi ve tüm mağaza tablolarında **InnoDB** gerekir. Paket, ad alanı ayrılmış PHP SDK **0.29.5** içerir; mağazada Composer gerekmez.
+**0.1.3**, özgün **OpenCart 4.1.0.4** sipariş modeli için hazırlanmış yerel ödeme eklentisidir. 64 bit PHP **8.3+**, BCMath, cURL, JSON, Sodium, MySQLi ve tüm mağaza tablolarında **InnoDB** gerekir. Paket, ad alanı ayrılmış PHP SDK **0.29.6** içerir; mağazada Composer gerekmez.
 
 ## Kurulum
 
@@ -59,3 +59,5 @@ Uygulama dönüşün bildirilen gövdesi **64 KiB** üzerindeyse reddeder. HTTPS
 Varsayılan, mağaza içinde açılan gömülü Lunixi formudur. İsteğe bağlı yönlendirme, backend'in döndürdüğü doğrulanmış `paymentPageUrl` adresini birebir kullanır. İki mod da aynı formu açar; açık yöntemler, çoklu kart, taksit ve sigorta Lunixi panelinden yönetilir ve yönlendirme gerektirmez. Tarayıcı token'ından ödeme sayfası adresi üretilmez.
 
 Önceden açıkça seçilmiş yönlendirme ayarları korunur. Form modu, dönüş adresi, ön provizyon ve dil özgün ödeme isteğine bağlıdır; değiştirmek denemenin hash veya idempotency anahtarını sıfırlayamaz. Eski bir denemede backend ödeme adresi kayıtlı değilse yönlendirme güvenli biçimde durur; adres üretmek, geçmişi silmek veya yeni anahtar açmak yerine mevcut denemeyi uzlaştırın. Gömülü form korumalı tarayıcı yapılandırmasını kullanır. İmzalı webhook, doğrulanmış tahsilat kontrolleri ve bilgilendirici 3DS/çoklu kart dönüşleri korunur.
+
+0.1.3 paketi, yayımlanmış PHP SDK **0.29.6** ile yeniden derlenip ayrı izole MariaDB üzerinde doğrulandı: **11 yerel platform testi / 81 assertion** ve **21 ek HTTP kontrolü** geçti. Harici Lunixi transport'u sentetiktir; tam sepet arayüzü, canlı banka/CDN/3DS veya Marketplace onayı iddia edilmez. Yerel PHP sürümü 8.4.1'dir; SDK üst akıştaki PHP 8.5 cURL düzeltmesini içerir. Ayrıntılar [test kaydındadır](TESTING.md#013-sdk-refresh-acceptance).

@@ -2,11 +2,13 @@
 
 # Lunixi Payments for OpenCart 4
 
+Current source/build release: **0.1.3**, bundling published **PHP SDK 0.29.6**. The new merchant ZIP must be built and verified before installation; publication of its public release asset is a separate step. The following 0.1.2 download receipt is historical and does not verify the new package.
+
 **Verified public merchant ZIP 0.1.2:** [`lunixi.ocmod.zip`](https://github.com/Lunixi-Payment/lunixi-opencart4/releases/download/v0.1.2/lunixi.ocmod.zip) · [SHA256SUMS](https://github.com/Lunixi-Payment/lunixi-opencart4/releases/download/v0.1.2/SHA256SUMS) · [Release v0.1.2](https://github.com/Lunixi-Payment/lunixi-opencart4/releases/tag/v0.1.2). The CI-built installation package was downloaded and verified on 2026-10-31. Use this asset rather than GitHub's automatic source archive.
 
 Public CI ZIP SHA256: `09c0b905a20d9f39676cb57e55b6ea3dc7cc5d1cf575df108bce5d9c4e694175`.
 
-Native payment extension **0.1.2** for **OpenCart 4.1.0.4**. Opens the existing Lunixi form on the merchant website by default, with optional redirect to the validated backend `paymentPageUrl`. Payment methods, eligible meal cards, shopping credit, installments, insurance and multi-card availability remain managed in the Lunixi merchant panel and form. This adapter does not collect card numbers/CVV or duplicate payment-method switches.
+Native payment extension **0.1.3** for **OpenCart 4.1.0.4**. Opens the existing Lunixi form on the merchant website by default, with optional redirect to the validated backend `paymentPageUrl`. Payment methods, eligible meal cards, shopping credit, installments, insurance and multi-card availability remain managed in the Lunixi merchant panel and form. This adapter does not collect card numbers/CVV or duplicate payment-method switches.
 
 [Turkish guide](docs/README.tr.md) · [Documentation](https://docs.lunixi.com/en/sdks/opencart4) · [Source](https://github.com/Lunixi-Payment/lunixi-opencart4)
 
@@ -18,7 +20,7 @@ Native payment extension **0.1.2** for **OpenCart 4.1.0.4**. Opens the existing 
 | PHP | 64-bit **8.3+**, within the platform's supported range |
 | Extensions | `bcmath`, `curl`, `json`, `sodium`, `mysqli` |
 | Database | MySQL/MariaDB, **all shop tables InnoDB**, one native connection |
-| Shared payment core | Namespace-isolated `lunixi/php-sdk` **0.29.5** |
+| Shared payment core | Namespace-isolated `lunixi/php-sdk` **0.29.6** |
 | Local native acceptance | PHP 8.4.1, MariaDB 11, official platform install, offline gateway transport |
 
 Compatibility preflight rejects a different platform version, modified native order model, nontransactional tables, and unreviewed active order/history, total or fraud hooks. Default audited native activity/statistics hooks remain active; native fraud can hold fulfillment even after capture. Third-party themes/extensions require a separate compatibility review. Native recurring/subscription carts are unavailable because automatic recurring billing is not implemented by this extension. This source release does not imply OpenCart Marketplace acceptance or a live merchant certification.
@@ -69,7 +71,7 @@ php tools/check-artifact.php
 composer audit --working-dir=tools
 ```
 
-The build pins SDK 0.29.5 and bundles a scoped copy. If testing an unreleased public SDK source checkout, provide the explicit `SDK_SOURCE=/absolute/public-sdk-checkout` environment variable; this path is not copied into public artifacts. `php-scoper` and Composer are build tools only. The resulting merchant ZIP is in `dist/`.
+The build pins SDK 0.29.6 and bundles a scoped copy. If testing an unreleased public SDK source checkout, provide the explicit `SDK_SOURCE=/absolute/public-sdk-checkout` environment variable; this path is not copied into public artifacts. `php-scoper` and Composer are build tools only. The resulting merchant ZIP is in `dist/`.
 
 [Native acceptance instructions](docs/TESTING.md) install the exact official platform in an isolated schema and test the **built ZIP**, real native models/events/stock and a synthetic external gateway. No production DB or live payment key is used. PHPStan level 5 checks native glue against actual platform classes; the shared core has its own independent suite. CI pins action commits and the platform source SHA.
 
@@ -88,3 +90,5 @@ The application rejects declared callback bodies above **64 KiB**. Configure the
 Embedded checkout is the default; optional hosted checkout uses the exact validated `paymentPageUrl` returned by the backend. Both modes open the same Lunixi form and support the methods, multi-card, installments and insurance enabled for the merchant. None of these features requires redirecting. Never derive a payment-page URL from the browser token.
 
 Existing explicit hosted settings are retained. Checkout mode, callback, preauthorization and locale are bound to an attempt's original request. Changing them cannot reset its request hash or idempotency key. If an older attempt has no stored backend payment-page URL, optional redirect fails closed: reconcile that attempt rather than constructing a URL, deleting history or creating a replacement key. Embedded rendering still uses the protected browser configuration. Keep the signed webhook, authenticated settlement checks and informational 3DS/split return routes.
+
+The 0.1.3 SDK refresh was checked separately: **11 native tests / 81 assertions** and **21 supplemental HTTP checks**, with the rebuilt package and published PHP SDK **0.29.6**. See [the current acceptance record](docs/TESTING.md#013-sdk-refresh-acceptance) for platform/transport boundaries. Public asset publication remains separate from the local build.
