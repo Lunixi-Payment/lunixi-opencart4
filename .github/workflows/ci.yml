@@ -1,0 +1,57 @@
+name: OpenCart 4 native acceptance
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    services:
+      database:
+        image: mariadb:11.8
+        env:
+          MARIADB_ROOT_PASSWORD: synthetic-ci-root-password
+          MARIADB_DATABASE: lunixi_oc4
+          MARIADB_USER: lunixi
+          MARIADB_PASSWORD: synthetic-ci-disposable-password
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s --health-timeout=5s --health-retries=30
+    env:
+      LUNIXI_NATIVE_TEST_DESTRUCTIVE: '1'
+      LUNIXI_TEST_DB: ${{ runner.temp }}/lunixi-acceptance-db.json
+      LUNIXI_TEST_DATABASE_PASSWORD: synthetic-ci-disposable-password
+      OPENCART_SOURCE: ${{ runner.temp }}/opencart-source
+      LUNIXI_TEST_SITE: ${{ runner.temp }}/opencart-site
+      SDK_SOURCE: ${{ github.workspace }}/.ci-sdk
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: shivammathur/setup-php@accd6127cb78bee3e8082180cb391013d204ef9f # 2.37.0
+        with:
+          php-version: '8.3'
+          extensions: bcmath,curl,json,sodium,mysqli,pdo_mysql,gd,mbstring,xml,zip
+          tools: composer:v2
+          coverage: none
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: Lunixi-Payment/lunixi-php
+          ref: v0.29.3
+          path: .ci-sdk
+      - name: Pinned native platform
+        run: |
+          git clone --filter=blob:none https://github.com/opencart/opencart.git "$OPENCART_SOURCE"
+          git -C "$OPENCART_SOURCE" checkout --detach 3b0597ec91cae3de040a63fee3834a6d910372ea
+          composer install --working-dir="$OPENCART_SOURCE" --no-dev --no-interaction --prefer-dist
+      - run: composer install --working-dir=tools --no-interaction --prefer-dist
+      - run: composer audit --working-dir=tools
+      - run: php tools/format.php --check
+      - run: php tools/build.php
+      - run: php tools/check-artifact.php
+      - run: php tests/ci-db.php
+      - run: php tests/install-native.php
+      - run: php tests/deploy-native.php
+      - run: php tests/prepare-fraud.php
+      - run: php tools/vendor/bin/phpunit --bootstrap tests/native_bootstrap.php tests/NativeAcceptanceTest.php
+      - run: php tests/admin-native.php
+      - run: php tests/cli-native.php
+      - run: php tools/vendor/bin/phpstan analyse --no-progress

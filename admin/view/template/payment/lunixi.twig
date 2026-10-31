@@ -1,0 +1,47 @@
+{{ header }}{{ column_left }}
+<div id="content"><div class="page-header"><div class="container-fluid"><img src="{{ logo|e }}" alt="Lunixi" height="48"><h1>{{ heading_title|e }}</h1></div></div>
+<div class="container-fluid lunixi-admin">
+  <label>{{ entry_store|e }} <select class="form-control" id="lunixi-store">{% for store in stores %}<option value="{{ store.store_id|e }}"{% if store.store_id == store_id %} selected{% endif %}>{{ store.name|e }}</option>{% endfor %}</select></label>
+  <div class="alert alert-info">{{ text_server_key|e }}<br>{{ text_worker|e }}<br>{{ text_form_settings|e }}</div>
+  <section class="card mb-3"><div class="card-header">{{ text_compatibility|e }}</div><div class="card-body">
+    {% if compatibility %}<ul>{% for issue in compatibility %}<li><code>{{ issue|e }}</code></li>{% endfor %}</ul>{% else %}<p>{{ text_ready|e }}</p>{% endif %}
+    <p>{{ text_webhook|e }}: <code>{{ webhook|e }}</code></p><p>{{ text_gateway|e }}: <code>{{ gateway|e }}</code></p>
+  </div></section>
+  <form id="lunixi-settings" action="{{ save|e }}" method="post" autocomplete="off" class="form-horizontal">
+    <input type="hidden" name="lunixi_csrf" value="{{ lunixi_csrf|e }}">
+    <section class="card mb-3"><div class="card-header">{{ text_setup|e }}</div><div class="card-body">
+      <p>{{ text_credentials|e }}</p>
+      {% for field in ['merchant_id','key_id','private_key','webhook_secret'] %}
+      <div class="row mb-3"><label class="col-sm-3 control-label" for="lunixi-{{ field|e }}">{{ attribute(_context,'entry_' ~ field)|e }}</label><div class="col-sm-9">
+        {% if field == 'private_key' %}<textarea id="lunixi-{{ field|e }}" name="payment_lunixi_{{ field|e }}" class="form-control" rows="3" spellcheck="false" autocomplete="off"></textarea>{% else %}<input id="lunixi-{{ field|e }}" type="password" name="payment_lunixi_{{ field|e }}" value="" class="form-control" autocomplete="new-password">{% endif %}
+      </div></div>{% endfor %}
+      <div class="row mb-3"><label class="col-sm-3 control-label">{{ entry_mode|e }}</label><div class="col-sm-9"><select class="form-control" name="payment_lunixi_mode"><option value="embedded"{% if payment_lunixi_mode == 'embedded' %} selected{% endif %}>{{ text_embedded|e }}</option><option value="hosted"{% if payment_lunixi_mode == 'hosted' %} selected{% endif %}>{{ text_hosted|e }}</option></select></div></div>
+      {% for field in ['status','preauth'] %}<div class="row mb-3"><label class="col-sm-3 control-label">{{ attribute(_context,'entry_' ~ field)|e }}</label><div class="col-sm-9"><select name="payment_lunixi_{{ field|e }}" class="form-control"><option value="0"{% if not attribute(_context,'payment_lunixi_' ~ field) %} selected{% endif %}>{{ text_off|e }}</option><option value="1"{% if attribute(_context,'payment_lunixi_' ~ field) %} selected{% endif %}>{{ text_on|e }}</option></select></div></div>{% endfor %}
+      {% for state in ['paid','pending','authorized','review','failed','refunded'] %}<div class="row mb-3"><label class="col-sm-3 control-label">{{ attribute(_context,'entry_' ~ state)|e }}</label><div class="col-sm-9"><select class="form-control" name="payment_lunixi_{{ state|e }}_status_id">{% for status in order_statuses %}<option value="{{ status.order_status_id|e }}"{% if status.order_status_id == attribute(_context,'payment_lunixi_' ~ state ~ '_status_id') %} selected{% endif %}>{{ status.name|e }}</option>{% endfor %}</select></div></div>{% endfor %}
+      <div class="row mb-3"><label class="col-sm-3 control-label">{{ entry_sort_order|e }}</label><div class="col-sm-9"><input type="number" class="form-control" name="payment_lunixi_sort_order" value="{{ payment_lunixi_sort_order|e }}"></div></div>
+      <button type="submit" class="btn btn-primary">{{ button_save|e }}</button>
+    </div></section>
+  </form>
+  <section class="card mb-3"><div class="card-header">{{ text_operations|e }}</div><div class="card-body"><p>{{ text_amount|e }}</p>
+    <form id="lunixi-operation" action="{{ operate|e }}" method="post"><input type="hidden" name="lunixi_csrf" value="{{ lunixi_csrf|e }}">
+      <label>{{ entry_order_id|e }} <input name="order_id" type="number" min="1" required class="form-control"></label>
+      <label>{{ entry_action|e }} <select name="operation" class="form-control"><option value="capture">{{ action_capture|e }}</option><option value="refund">{{ action_refund|e }}</option><option value="void">{{ action_void|e }}</option></select></label>
+      <label>{{ entry_amount|e }} <input name="amount" type="text" inputmode="decimal" pattern="[0-9]+([.][0-9]+)?" class="form-control"></label>
+      <label>{{ entry_operation_id|e }} <input name="operation_id" class="form-control" autocomplete="off"></label>
+      <button class="btn btn-primary" type="submit">{{ button_queue|e }}</button><button class="btn btn-light" id="lunixi-refresh" type="button">{{ button_refresh|e }}</button>
+    </form><pre id="lunixi-operations" aria-live="polite"></pre>
+  </div></section>
+  <p id="lunixi-admin-message" role="status" aria-live="polite"></p>
+</div></div>
+<style{% if csp_nonce %} nonce="{{ csp_nonce|e }}"{% endif %}>.lunixi-admin .card-header,.lunixi-admin .panel-heading{color:#1e3a5f}.lunixi-admin .btn-primary{background:#ff6b35;border-color:#ff6b35}.lunixi-admin label{margin-inline-end:1rem}.lunixi-admin pre{white-space:pre-wrap;overflow-wrap:anywhere}</style>
+<script{% if csp_nonce %} nonce="{{ csp_nonce|e }}"{% endif %}>
+(function(){
+  const message=document.getElementById('lunixi-admin-message');
+  document.getElementById('lunixi-store').onchange=function(){window.location.assign({{ store_select|json_encode|raw }} + '&store_id=' + encodeURIComponent(this.value));};
+  async function submit(form,url){const response=await fetch(url||form.action,{method:'POST',credentials:'same-origin',body:new FormData(form),cache:'no-store'});return response.json();}
+  document.getElementById('lunixi-settings').onsubmit=async function(event){event.preventDefault();try{const data=await submit(this);message.textContent=data.error||data.success||'';}catch(_){message.textContent={{ error_configuration|json_encode|raw }};}};
+  document.getElementById('lunixi-operation').onsubmit=async function(event){event.preventDefault();try{const data=await submit(this);message.textContent=data.error||data.message||'';if(data.operation_id){this.elements.operation_id.value=data.operation_id;}}catch(_){message.textContent={{ error_operation|json_encode|raw }};}};
+  document.getElementById('lunixi-refresh').onclick=async function(){const form=document.getElementById('lunixi-operation');try{const result=await submit(form,{{ refresh|json_encode|raw }});document.getElementById('lunixi-operations').textContent=JSON.stringify(result,null,2);}catch(_){message.textContent={{ error_operation|json_encode|raw }};}};
+})();
+</script>
+{{ footer }}

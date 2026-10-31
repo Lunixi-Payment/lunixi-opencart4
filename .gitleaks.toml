@@ -1,0 +1,10 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Exact reviewed synthetic test fixture, never a merchant credential"
+condition = "AND"
+targetRules = ["private-key"]
+paths = ['''(?:^|/)tests/fixtures/canonical\-vectors\.json$''']
+regexTarget = "line"
+regexes = ['''\A\s*\Q"privateKeyPem": "-----BEGIN PRIVATE KEY-----\nMC4CAQAwBQYDK2VwBCIEIAABAgMEBQYHCAkKCwwNDg8QERITFBUWFxgZGhscHR4f\n-----END PRIVATE KEY-----\n",\E\s*\z'''] # gitleaks:allow

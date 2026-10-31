@@ -1,0 +1,19 @@
+parameters:
+    level: 5
+    dynamicConstantNames:
+        - VERSION
+    paths:
+        - system/library/lunixi4/src
+        - admin/controller/payment
+        - catalog/controller/payment
+        - catalog/model/payment
+    bootstrapFiles:
+        - tests/phpstan-bootstrap.php
+    scanDirectories:
+        - %env.OPENCART_SOURCE%/upload/system/engine
+        - %env.OPENCART_SOURCE%/upload/system/library
+        - %env.OPENCART_SOURCE%/upload/catalog/controller/mail
+        - %env.OPENCART_SOURCE%/upload/admin/model/localisation
+        - %env.OPENCART_SOURCE%/upload/admin/model/setting
+        - build/package/system/library/lunixi4/sdk
+    tmpDir: build/phpstan

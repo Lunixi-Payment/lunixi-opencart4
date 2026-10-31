@@ -1,0 +1,31 @@
+<div class="lunixi-payment" data-csrf="{{ lunixi_csrf|e }}">
+  <p>{{ text_form_settings|e }}</p>
+  <div id="lunixi-checkout-form"></div>
+  <p id="lunixi-message" role="status" aria-live="polite"></p>
+  <div class="buttons"><div class="text-end"><button type="button" id="lunixi-confirm" class="btn btn-primary">{{ button_confirm|e }}</button></div></div>
+</div>
+<script src="https://cdn.lunixi.com/lunixi-checkout.min.js"{% if csp_nonce %} nonce="{{ csp_nonce|e }}"{% endif %}></script>
+<script{% if csp_nonce %} nonce="{{ csp_nonce|e }}"{% endif %}>
+(function () {
+  const button = document.getElementById('lunixi-confirm');
+  const message = document.getElementById('lunixi-message');
+  const csrf = button.closest('.lunixi-payment').getAttribute('data-csrf');
+  let timer;
+  const poll = async () => {
+    try { const response = await fetch({{ status_json|raw }}, {credentials: 'same-origin', cache: 'no-store'}); const result = await response.json(); if (result.complete && result.redirect) { clearInterval(timer); window.location.assign(result.redirect); } else if (result.message) { message.textContent = result.message; } } catch (_) {}
+  };
+  button.onclick = async () => {
+    button.disabled = true;
+    try {
+      const response = await fetch({{ confirm_json|raw }}, {method: 'POST', credentials: 'same-origin', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: new URLSearchParams({lunixi_csrf: csrf}), cache: 'no-store'});
+      const result = await response.json();
+      if (result.redirect) { window.location.assign(result.redirect); return; }
+      if (result.error) { message.textContent = result.error; button.disabled = false; return; }
+      const checkout = Lunixi.checkout.create(result.config);
+      checkout.mount('#lunixi-checkout-form');
+      button.hidden = true;
+      timer = setInterval(poll, 5000);
+    } catch (_) { message.textContent = {{ error_checkout|json_encode|raw }}; button.disabled = false; }
+  };
+})();
+</script>

@@ -1,0 +1,3 @@
+# Contributing
+
+Discuss native lifecycle changes before implementation. Payment signing, settlement, split/fee evidence and amount rules belong to the shared PHP SDK; the extension is a native adapter. Add tests for the failure/race being fixed, run formatting, PHPStan, dependency audit, artifact checks and the complete pinned native acceptance suite against a disposable database. Keep EN/TR language keys synchronized and user-facing text localized. Do not commit generated build/vendor/dist trees, platform installations, secrets or private paths. Never run destructive fixtures against a merchant database.
