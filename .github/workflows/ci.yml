@@ -32,7 +32,6 @@ jobs:
       LUNIXI_TEST_DATABASE_PASSWORD: synthetic-ci-disposable-password
       OPENCART_SOURCE: /tmp/lunixi-opencart4-source
       LUNIXI_TEST_SITE: /tmp/lunixi-opencart4-site
-      SDK_SOURCE: ${{ github.workspace }}/.ci-sdk
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: shivammathur/setup-php@accd6127cb78bee3e8082180cb391013d204ef9f # 2.37.0
@@ -41,11 +40,6 @@ jobs:
           extensions: bcmath,curl,json,sodium,mysqli,pdo_mysql,gd,mbstring,xml,zip
           tools: composer:v2
           coverage: none
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        with:
-          repository: Lunixi-Payment/lunixi-php
-          ref: v0.29.6
-          path: .ci-sdk
       - name: Pinned native platform
         run: |
           git clone --filter=blob:none https://github.com/opencart/opencart.git "$OPENCART_SOURCE"
