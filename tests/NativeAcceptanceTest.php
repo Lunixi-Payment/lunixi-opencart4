@@ -6,6 +6,7 @@ use Lunixi\OpenCart4\{Kernel, NativeLedgerStore, Security};
 use Lunixi\OpenCart4\Vendor\Lunixi\Sdk\LunixiClient;
 use Lunixi\OpenCart4\Vendor\Lunixi\Sdk\Commerce\CheckoutService;
 require_once __DIR__ . '/NativeGateway.php';
+require_once __DIR__ . '/NativePaymentConfiguration.php';
 final class NativeAcceptanceTest extends TestCase
 {
     private Opencart\System\Engine\Registry $registry;
@@ -46,14 +47,7 @@ final class NativeAcceptanceTest extends TestCase
         $db->query("DELETE FROM `" . DB_PREFIX . "currency` WHERE code='TRY'");
         $db->query("INSERT INTO `" . DB_PREFIX . "currency` (title,code,symbol_left,symbol_right,decimal_place,value,status,date_modified) VALUES ('Turkish Lira','TRY','','TL','2','1.00000000',1,NOW()) ON DUPLICATE KEY UPDATE decimal_place='2'");
         $config = $this->registry->get('config');
-        foreach (['paid' => 2, 'pending' => 1, 'authorized' => 1, 'review' => 1, 'failed' => 10, 'refunded' => 11] as $state => $id) {
-            $config->set('payment_lunixi_' . $state . '_status_id', in_array($state, ['pending', 'authorized', 'review'], true) ? (int) (new NativeLedgerStore($db, DB_PREFIX))->meta('status:' . $state) : $id);
-        }
-        $config->set('payment_lunixi_mode', 'embedded');
-        $config->set('payment_lunixi_status', 1);
-        $config->set('payment_lunixi_preauth', 0);
-        $config->set('config_customer_activity', 0);
-        $config->set('fraud_ip_status', 0);
+        nativePaymentConfiguration($this->registry);
         $this->gateway = new NativeGateway();
         $fixture = json_decode(file_get_contents(__DIR__ . '/fixtures/canonical-vectors.json'), true, 16, JSON_THROW_ON_ERROR);
         $this->client = LunixiClient::create(['baseUrl' => 'https://api-gateway.lunixi.com', 'keyId' => 'mk_test_native', 'privateKey' => $fixture['privateKeyPem'], 'maxRetries' => 0], $this->gateway);
