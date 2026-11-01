@@ -83,7 +83,7 @@ final class NativeAcceptanceTest extends TestCase
         $id = $this->order('199.9500', '1.25000000');
         $order = $this->kernel->orders()->order($id);
         self::assertIsString($order['total']);
-        self::assertSame(24994, $this->kernel->orders()->snapshot($order, 'merchant-native')->amount());
+        self::assertSame('24994', $this->kernel->orders()->snapshot($order, 'merchant-native')->amount());
         $cipher = $this->registry->get('db')->query('SELECT ciphertext FROM `' . DB_PREFIX . 'lunixi_profile`')->row['ciphertext'];
         self::assertStringNotContainsString('PRIVATE KEY', $cipher);
         self::assertStringNotContainsString('synthetic_webhook', $cipher);

@@ -1,6 +1,6 @@
 # Native acceptance
 
-**Current verified merchant ZIP 0.1.3:** [`lunixi.ocmod.zip`](https://github.com/Lunixi-Payment/lunixi-opencart4/releases/download/v0.1.3/lunixi.ocmod.zip) · [SHA256SUMS](https://github.com/Lunixi-Payment/lunixi-opencart4/releases/download/v0.1.3/SHA256SUMS) · [Release v0.1.3](https://github.com/Lunixi-Payment/lunixi-opencart4/releases/tag/v0.1.3) · [Passing release CI](https://github.com/Lunixi-Payment/lunixi-opencart4/actions/runs/41242057536).
+**Historical verified merchant ZIP 0.1.3:** [`lunixi.ocmod.zip`](https://github.com/Lunixi-Payment/lunixi-opencart4/releases/download/v0.1.3/lunixi.ocmod.zip) · [SHA256SUMS](https://github.com/Lunixi-Payment/lunixi-opencart4/releases/download/v0.1.3/SHA256SUMS) · [Release v0.1.3](https://github.com/Lunixi-Payment/lunixi-opencart4/releases/tag/v0.1.3) · [Passing release CI](https://github.com/Lunixi-Payment/lunixi-opencart4/actions/runs/41242057536).
 
 Public ZIP SHA-256: `e111ca6469cc646a7ef8450c1b3c99d75d425733a1dbc8cbf4ae1ab707972b43`. The downloaded archive passed public checksum, GitHub asset digest and ZIP CRC checks on 1 November 2026.
 
@@ -28,7 +28,7 @@ php tools/vendor/bin/phpstan analyse --no-progress
 composer audit --working-dir=tools
 ```
 
-Official source checkouts need their own `composer install --no-dev` before fixture installation if platform vendor files are absent. Build-time `SDK_SOURCE` may point to a separately checked-out public PHP SDK0.29.6; this never becomes a runtime dependency path.
+Official source checkouts need their own `composer install --no-dev` before fixture installation if platform vendor files are absent. Build-time `SDK_SOURCE` may point to a separately checked-out public PHP SDK1.0.1; this never becomes a runtime dependency path.
 
 The destructive opt-in permits installation and native test-only engine conversion in the dedicated schema. It is not a production migration command. The fixture installer passes random synthetic credentials in PHP memory to the official installer; it does not put DB passwords in a shell command. Native acceptance includes exact persisted decimal FX/ISO precision, encrypted profiles, MyISAM preflight, rollback after real stock/history writes, signed tamper/replay/collision, concurrent child-process event consumption, native fraud holds, queued capture, delayed confirmation, partial/full refunds/restock, void, overrefund rejection, changed-order browser denial and lost-response webhook recovery. The separate admin process uses real native users/models/controllers/Twig to check install, form, native token, custom nonce, finance permissions and uninstall retention.
 

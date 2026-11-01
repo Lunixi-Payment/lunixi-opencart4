@@ -2,11 +2,9 @@
 
 # OpenCart 4 için Lunixi Payments
 
-**Doğrulanmış güncel mağaza ZIP’i 0.1.3:** [`lunixi.ocmod.zip`](https://github.com/Lunixi-Payment/lunixi-opencart4/releases/download/v0.1.3/lunixi.ocmod.zip) · [SHA256SUMS](https://github.com/Lunixi-Payment/lunixi-opencart4/releases/download/v0.1.3/SHA256SUMS) · [Yayın v0.1.3](https://github.com/Lunixi-Payment/lunixi-opencart4/releases/tag/v0.1.3) · [Başarılı yayın CI koşumu](https://github.com/Lunixi-Payment/lunixi-opencart4/actions/runs/41242057536).
+1.0.0 kurulum ZIP’i [GitHub sürümlerinde](https://github.com/Lunixi-Payment/lunixi-opencart4/releases) kullanılabilir olduğunda onu indirin ve aynı sürümün `SHA256SUMS` dosyasıyla doğrulayın. Paket PHP SDK 1.0.1 gerektirir. [Para sözleşmesi geçişini](../MIGRATION-1.0.md) uygulayın; 0.x ZIP’leri önceki sayısal para sözleşmesini kullanır.
 
-Public ZIP SHA-256: `e111ca6469cc646a7ef8450c1b3c99d75d425733a1dbc8cbf4ae1ab707972b43`. İndirilen arşivin checksum, GitHub asset digest ve ZIP CRC kontrolleri 1 Kasım 2026 tarihinde doğrulandı. Otomatik GitHub kaynak arşivi yerine bu kurulum paketini kullanın.
-
-**0.1.3**, özgün **OpenCart 4.1.0.4** sipariş modeli için hazırlanmış yerel ödeme eklentisidir. 64 bit PHP **8.3+**, BCMath, cURL, JSON, Sodium, MySQLi ve tüm mağaza tablolarında **InnoDB** gerekir. Paket, ad alanı ayrılmış PHP SDK **0.29.6** içerir; mağazada Composer gerekmez.
+**1.0.0**, özgün **OpenCart 4.1.0.4** sipariş modeli için hazırlanmış yerel ödeme eklentisidir. 64 bit PHP **8.3+**, BCMath, cURL, JSON, Sodium, MySQLi ve tüm mağaza tablolarında **InnoDB** gerekir. Paket, ad alanı ayrılmış PHP SDK **1.0.1** içerir; mağazada Composer gerekmez.
 
 ## Kurulum
 
@@ -28,7 +26,7 @@ php /absolute/shop/extension/lunixi/system/library/lunixi4/cli.php --root=/absol
 
 Yönetim ekranı tahsilat/iade/iptal işlemini kalıcı işlem kimliğiyle kuyruğa alır. Katalog bağlamındaki görev gerçek OpenCart sipariş/stok kodunu yürütür. **Bekleyen veya belirsiz işlem başarılı değildir.** Aynı kimlik ve tutarla takip/tekrar yapılır; sonuç çözülmeden farklı işlem açılmaz. Başarı ancak kimlik doğrulamalı API bakiye sorgusu istenen hareketi kanıtladığında gösterilir. İade gerçekten tahsil edilen bakiyeyi aşamaz. Çoklu kart iadesi ortak SDK'nın üst ödeme iade akışını kullanır.
 
-Tarayıcı dönüşü, query parametresi veya form olayı siparişi ödendi yapmaz. Oturum/müşteri/mağaza/sipariş sahipliği kontrol edilir. Ham gövde v2 HMAC, zaman ve olay kimliği doğrulanır; ardından kimlik doğrulamalı ödeme sorgusu merchant, ödeme, sabit sipariş izi, para birimi, tam sayı tutar, vade farkı ve çoklu kart üst ödeme sonucunu doğrular. Sipariş tutarı sonradan değiştiyse eski ödeme siparişi tamamlamaz. Vade farkı sepete tekrar eklenmez. Eksik çoklu kart veya kısmi tahsilat bekler; yerel fraud/manual teslim blokesi korunur.
+Tarayıcı dönüşü, query parametresi veya form olayı siparişi ödendi yapmaz. Oturum/müşteri/mağaza/sipariş sahipliği kontrol edilir. Ham gövde v2 HMAC, zaman ve olay kimliği doğrulanır; ardından kimlik doğrulamalı ödeme sorgusu merchant, ödeme, sabit sipariş izi, para birimi, kanonik string tutar, vade farkı ve çoklu kart üst ödeme sonucunu doğrular. Sipariş tutarı sonradan değiştiyse eski ödeme siparişi tamamlamaz. Vade farkı sepete tekrar eklenmez. Eksik çoklu kart veya kısmi tahsilat bekler; yerel fraud/manual teslim blokesi korunur.
 
 Olay kutusu ve sipariş değişikliği aynı bağlantı/transaction içinde tutulur; hata halinde stok ve olay tüketimi birlikte geri alınır. Yinelenen veya eşzamanlı webhook ikinci stok düşümüne neden olmaz. Yerel iş/fraud event'leri korunur; yalnız denetlenmiş e-posta bildirimleri commit sonrasına ertelenir. E-postanın `sending`/`uncertain` durumu operatör incelemesi gerektirir, otomatik tekrar gönderilmez.
 
@@ -67,3 +65,9 @@ Varsayılan, mağaza içinde açılan gömülü Lunixi formudur. İsteğe bağl�
 0.1.3 paketi, yayımlanmış PHP SDK **0.29.6** ile yeniden derlenip ayrı izole MariaDB üzerinde doğrulandı: **11 yerel platform testi / 81 assertion** ve **21 ek HTTP kontrolü** geçti. Harici Lunixi transport'u sentetiktir; tam sepet arayüzü, canlı banka/CDN/3DS veya Marketplace onayı iddia edilmez. Yerel PHP sürümü 8.4.1'dir; SDK üst akıştaki PHP 8.5 cURL düzeltmesini içerir. Ayrıntılar [test kaydındadır](TESTING.md#013-sdk-refresh-acceptance).
 
 Doğrulanmış public 0.1.3 arşivinin PHP/JavaScript/template ve finansal runtime dosyaları yerel kabul ZIP’iyle eşleşir; yalnız dokümantasyon için koyu logo eklendi. Gerçek **OpenCart 4.1.0.4 / PHP 8.4.1 / MariaDB 11.8.6 / InnoDB** üzerinde **11 native test / 81 assertion**, **21 ek HTTP kontrolü** ve admin/CLI/dönüş kontrolleri geçti. Ek HTTP testi, değişmemiş widget’ı açıkça test amaçlı native parent controller ile yükler; tam sepet/tarayıcı kabulü değildir. Gateway sentetiktir; banka/3DS/CDN, SMTP veya Marketplace onayı iddia edilmez. [Kabul kapsamı](TESTING.md#013-sdk-refresh-acceptance).
+
+## Geçmiş yayın kanıtı
+
+**Geçmiş doğrulanmış mağaza ZIP’i 0.1.3:** [`lunixi.ocmod.zip`](https://github.com/Lunixi-Payment/lunixi-opencart4/releases/download/v0.1.3/lunixi.ocmod.zip) · [SHA256SUMS](https://github.com/Lunixi-Payment/lunixi-opencart4/releases/download/v0.1.3/SHA256SUMS) · [Yayın v0.1.3](https://github.com/Lunixi-Payment/lunixi-opencart4/releases/tag/v0.1.3) · [Başarılı yayın CI koşumu](https://github.com/Lunixi-Payment/lunixi-opencart4/actions/runs/41242057536).
+
+Public ZIP SHA-256: `e111ca6469cc646a7ef8450c1b3c99d75d425733a1dbc8cbf4ae1ab707972b43`. İndirilen arşivin checksum, GitHub asset digest ve ZIP CRC kontrolleri 1 Kasım 2026 tarihinde doğrulandı. Bu kanıt yalnız ilgili geçmiş sürüm içindir.

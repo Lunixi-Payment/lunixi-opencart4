@@ -51,11 +51,11 @@ final class NativeGateway implements HttpClientInterface
                 $action = $match[2];
                 $amount = $value['amount'] ?? null;
                 if ($action === 'capture') {
-                    $p['details']['capturedAmount'] = (string) ((int) $p['details']['capturedAmount'] + $amount);
-                    $p['data']['status'] = (int) $p['details']['capturedAmount'] === $p['data']['amount'] ? 'CAPTURED' : 'PARTIALLY_CAPTURED';
+                    $p['details']['capturedAmount'] = \Lunixi\OpenCart4\Vendor\Lunixi\Sdk\Commerce\Money::add($p['details']['capturedAmount'], $amount);
+                    $p['data']['status'] = $p['details']['capturedAmount'] === $p['data']['amount'] ? 'CAPTURED' : 'PARTIALLY_CAPTURED';
                 }
                 if ($action === 'refund') {
-                    $p['details']['refundedAmount'] = (string) ((int) $p['details']['refundedAmount'] + $amount);
+                    $p['details']['refundedAmount'] = \Lunixi\OpenCart4\Vendor\Lunixi\Sdk\Commerce\Money::add($p['details']['refundedAmount'], $amount);
                     $p['data']['status'] = $p['details']['refundedAmount'] === $p['details']['capturedAmount'] ? 'REFUNDED' : 'PARTIALLY_REFUNDED';
                 }
                 if ($action === 'void') {

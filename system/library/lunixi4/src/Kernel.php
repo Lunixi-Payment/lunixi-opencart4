@@ -110,7 +110,7 @@ final class Kernel
     private function service(string $key): CheckoutService
     {
         $credentials = $this->profileFor($key);
-        $client = $this->testClient ?? LunixiClient::create(['baseUrl' => self::origin(), 'keyId' => $credentials['keyId'], 'privateKey' => $credentials['privateKey'], 'maxRetries' => 0, 'timeout' => 30, 'userAgent' => 'lunixi-opencart4/0.1.3']);
+        $client = $this->testClient ?? LunixiClient::create(['baseUrl' => self::origin(), 'keyId' => $credentials['keyId'], 'privateKey' => $credentials['privateKey'], 'maxRetries' => 0, 'timeout' => 30, 'userAgent' => 'lunixi-opencart4/1.0.0']);
         return new CheckoutService($client, $this->store, self::secretBox());
     }
     public function assertConfigured(): void
@@ -210,7 +210,7 @@ final class Kernel
             }
             $r = $this->store->query('SELECT * FROM `' . DB_PREFIX . 'lunixi_operation` WHERE order_key=' . $this->store->quote($key) . " AND state IN ('pending','uncertain') ORDER BY created_at LIMIT 1 FOR UPDATE")->row;
             if ($r !== []) {
-                if ($r['action'] !== $action || ($r['amount_minor'] === null ? null : (int) $r['amount_minor']) !== $amount || $operationId !== null && $operationId !== $r['operation_id']) {
+                if ($r['action'] !== $action || ($r['amount_minor'] === null ? null : (string) $r['amount_minor']) !== $amount || $operationId !== null && $operationId !== $r['operation_id']) {
                     throw new \RuntimeException('Retry or reconcile the unresolved operation first.');
                 }
                 return $r['operation_id'];
@@ -221,7 +221,7 @@ final class Kernel
             }
             $this->store->query('INSERT IGNORE INTO `' . DB_PREFIX . 'lunixi_operation` (operation_id,order_key,action,amount_minor,created_at) VALUES (' . $this->store->quote($id) . ',' . $this->store->quote($key) . ',' . $this->store->quote($action) . ',' . ($amount === null ? 'NULL' : $amount) . ',' . time() . ')');
             $saved = $this->store->query('SELECT * FROM `' . DB_PREFIX . 'lunixi_operation` WHERE operation_id=' . $this->store->quote($id))->row;
-            if (($saved['order_key'] ?? null) !== $key || ($saved['action'] ?? null) !== $action || ($saved['amount_minor'] === null ? null : (int) $saved['amount_minor']) !== $amount) {
+            if (($saved['order_key'] ?? null) !== $key || ($saved['action'] ?? null) !== $action || ($saved['amount_minor'] === null ? null : (string) $saved['amount_minor']) !== $amount) {
                 throw new \RuntimeException('Native operation ID was reused for a different request.');
             }
             if (($saved['state'] ?? '') === 'rejected') {
@@ -278,7 +278,7 @@ final class Kernel
             try {
                 $id = $this->store->nativeId($operation['order_key']);
                 $order = $this->orders->order($id);
-                $decimal = $operation['amount_minor'] === null ? null : \Lunixi\OpenCart4\Vendor\Lunixi\Sdk\Commerce\Money::decimal((int) $operation['amount_minor'], \Lunixi\OpenCart4\Vendor\Lunixi\Sdk\Commerce\Money::exponent($order['currency_code']));
+                $decimal = $operation['amount_minor'] === null ? null : \Lunixi\OpenCart4\Vendor\Lunixi\Sdk\Commerce\Money::decimal((string) $operation['amount_minor'], \Lunixi\OpenCart4\Vendor\Lunixi\Sdk\Commerce\Money::exponent($order['currency_code']));
                 $state = $this->operation($id, $operation['action'], $decimal, $operation['operation_id']);
                 if ($state['state'] !== 'confirmed') {
                     $result['pending']++;

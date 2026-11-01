@@ -54,7 +54,7 @@ $_SERVER['SERVER_PORT'] = 443;
 $_SERVER['HTTPS'] = 'on';
 $_SERVER['REQUEST_METHOD'] = 'GET';
 $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
-$_SERVER['HTTP_USER_AGENT'] = 'Lunixi-Reconciliation/0.1.3';
+$_SERVER['HTTP_USER_AGENT'] = 'Lunixi-Reconciliation/1.0.0';
 $_SERVER['REQUEST_URI'] = $prefix . '/index.php?route=extension/lunixi/payment/lunixi.cron';
 $_SERVER['PHP_SELF'] = '/index.php';
 $_SERVER['SCRIPT_NAME'] = '/index.php';

@@ -1,12 +1,12 @@
 <p align="center"><img src=".github/assets/lunixi-logo.svg" alt="Lunixi" width="220"></p>
 
+> Version 1.0.0 changes all money to canonical minor-unit strings. Read [the migration guide](MIGRATION-1.0.md).
+
 # Lunixi Payments for OpenCart 4
 
-**Current verified merchant ZIP 0.1.3:** [`lunixi.ocmod.zip`](https://github.com/Lunixi-Payment/lunixi-opencart4/releases/download/v0.1.3/lunixi.ocmod.zip) · [SHA256SUMS](https://github.com/Lunixi-Payment/lunixi-opencart4/releases/download/v0.1.3/SHA256SUMS) · [Release v0.1.3](https://github.com/Lunixi-Payment/lunixi-opencart4/releases/tag/v0.1.3) · [Passing release CI](https://github.com/Lunixi-Payment/lunixi-opencart4/actions/runs/41242057536).
+After the 1.0.0 merchant ZIP is available in [GitHub releases](https://github.com/Lunixi-Payment/lunixi-opencart4/releases), download it and verify its matching `SHA256SUMS`. This package requires PHP SDK 1.0.1. Follow the [money-string migration](MIGRATION-1.0.md); 0.x ZIPs use the previous numeric-money contract.
 
-Public ZIP SHA-256: `e111ca6469cc646a7ef8450c1b3c99d75d425733a1dbc8cbf4ae1ab707972b43`. The downloaded archive passed public checksum, GitHub asset digest and ZIP CRC checks on 1 November 2026. Use this installation package rather than GitHub’s automatic source archive.
-
-Native payment extension **0.1.3** for **OpenCart 4.1.0.4**. Opens the existing Lunixi form on the merchant website by default, with optional redirect to the validated backend `paymentPageUrl`. Payment methods, eligible meal cards, shopping credit, installments, insurance and multi-card availability remain managed in the Lunixi merchant panel and form. This adapter does not collect card numbers/CVV or duplicate payment-method switches.
+Native payment extension **1.0.0** for **OpenCart 4.1.0.4**. Opens the existing Lunixi form on the merchant website by default, with optional redirect to the validated backend `paymentPageUrl`. Payment methods, eligible meal cards, shopping credit, installments, insurance and multi-card availability remain managed in the Lunixi merchant panel and form. This adapter does not collect card numbers/CVV or duplicate payment-method switches.
 
 [Turkish guide](docs/README.tr.md) · [Documentation](https://docs.lunixi.com/en/sdks/opencart4) · [Source](https://github.com/Lunixi-Payment/lunixi-opencart4)
 
@@ -18,7 +18,7 @@ Native payment extension **0.1.3** for **OpenCart 4.1.0.4**. Opens the existing 
 | PHP | 64-bit **8.3+**, within the platform's supported range |
 | Extensions | `bcmath`, `curl`, `json`, `sodium`, `mysqli` |
 | Database | MySQL/MariaDB, **all shop tables InnoDB**, one native connection |
-| Shared payment core | Namespace-isolated `lunixi/php-sdk` **0.29.6** |
+| Shared payment core | Namespace-isolated `lunixi/php-sdk` **1.0.1** |
 | Local native acceptance | PHP 8.4.1, MariaDB 11, official platform install, offline gateway transport |
 
 Compatibility preflight rejects a different platform version, modified native order model, nontransactional tables, and unreviewed active order/history, total or fraud hooks. Default audited native activity/statistics hooks remain active; native fraud can hold fulfillment even after capture. Third-party themes/extensions require a separate compatibility review. Native recurring/subscription carts are unavailable because automatic recurring billing is not implemented by this extension. This source release does not imply OpenCart Marketplace acceptance or a live merchant certification.
@@ -69,7 +69,7 @@ php tools/check-artifact.php
 composer audit --working-dir=tools
 ```
 
-The build pins SDK 0.29.6 and bundles a scoped copy. If testing an unreleased public SDK source checkout, provide the explicit `SDK_SOURCE=/absolute/public-sdk-checkout` environment variable; this path is not copied into public artifacts. `php-scoper` and Composer are build tools only. The resulting merchant ZIP is in `dist/`.
+The build pins SDK 1.0.1 and bundles a scoped copy. For local development with a reviewed SDK source checkout, provide the explicit `SDK_SOURCE=/absolute/public-sdk-checkout` environment variable; this path is not copied into public artifacts. `php-scoper` and Composer are build tools only. The resulting merchant ZIP is in `dist/`.
 
 [Native acceptance instructions](docs/TESTING.md) install the exact official platform in an isolated schema and test the **built ZIP**, real native models/events/stock and a synthetic external gateway. No production DB or live payment key is used. PHPStan level 5 checks native glue against actual platform classes; the shared core has its own independent suite. CI pins action commits and the platform source SHA.
 
@@ -94,3 +94,9 @@ The 0.1.3 SDK refresh was checked separately: **11 native tests / 81 assertions*
 **Historical public merchant ZIP 0.1.2:** [`lunixi.ocmod.zip`](https://github.com/Lunixi-Payment/lunixi-opencart4/releases/download/v0.1.2/lunixi.ocmod.zip) · [SHA256SUMS](https://github.com/Lunixi-Payment/lunixi-opencart4/releases/download/v0.1.2/SHA256SUMS) · [Release v0.1.2](https://github.com/Lunixi-Payment/lunixi-opencart4/releases/tag/v0.1.2). The CI-built installation package was downloaded and verified on 2026-10-31. Use this asset rather than GitHub's automatic source archive. Historical SHA-256: `09c0b905a20d9f39676cb57e55b6ea3dc7cc5d1cf575df108bce5d9c4e694175`.
 
 The public 0.1.3 archive linked above passed checksum/asset-digest/CRC verification and [release CI](https://github.com/Lunixi-Payment/lunixi-opencart4/actions/runs/41242057536). Its PHP/JavaScript/templates and financial runtime match the locally accepted 0.1.3 ZIP; the public archive only adds a documentation dark-logo asset. Acceptance used real OpenCart **4.1.0.4**, **PHP 8.4.1 / MariaDB 11.8.6 / InnoDB**, with **11 native tests / 81 assertions** and **21 supplemental HTTP checks**, plus native admin/CLI/return checks. The supplemental widget uses an explicit test-only native parent controller; this is not a complete shopping-cart browser walkthrough. Gateway transport is synthetic. Browser/CDN, real bank/3DS, SMTP and Marketplace acceptance are not claimed.
+
+## Historical release evidence
+
+**Historical verified merchant ZIP 0.1.3:** [`lunixi.ocmod.zip`](https://github.com/Lunixi-Payment/lunixi-opencart4/releases/download/v0.1.3/lunixi.ocmod.zip) · [SHA256SUMS](https://github.com/Lunixi-Payment/lunixi-opencart4/releases/download/v0.1.3/SHA256SUMS) · [Release v0.1.3](https://github.com/Lunixi-Payment/lunixi-opencart4/releases/tag/v0.1.3) · [Passing release CI](https://github.com/Lunixi-Payment/lunixi-opencart4/actions/runs/41242057536).
+
+Public ZIP SHA-256: `e111ca6469cc646a7ef8450c1b3c99d75d425733a1dbc8cbf4ae1ab707972b43`. The downloaded archive passed public checksum, GitHub asset digest and ZIP CRC checks on 1 November 2026. This receipt applies only to that historical version.
