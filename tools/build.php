@@ -2,6 +2,8 @@
 declare(strict_types=1);
 /** Build a standalone merchant OCMOD ZIP; Composer is a build-time tool only. */
 $root=dirname(__DIR__);
+$moduleVersion=trim(file_get_contents($root.'/VERSION'));
+if(!preg_match('/^(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)$/D',$moduleVersion)){throw new RuntimeException('Invalid module release version.');}
 $local=getenv('SDK_SOURCE')?:null;
 if ($local!==null && (!is_file($local . '/composer.json') || !is_file($local . '/src/Commerce/CheckoutService.php'))) { throw new RuntimeException('SDK_SOURCE must point to the supported public SDK source checkout.'); }
 function ocRun(array $command,string $cwd): void { $p=proc_open($command,[STDIN,STDOUT,STDERR],$pipes,$cwd); if (!is_resource($p) || proc_close($p)!==0) { throw new RuntimeException('Release build command failed.'); } }
@@ -9,9 +11,16 @@ function ocRemove(string $path): void { if (!is_dir($path)) { return; } foreach(
 function ocCopy(string $source,string $target): void { if(is_dir($source)){if(!is_dir($target)){mkdir($target,0755,true);}foreach(new DirectoryIterator($source)as$f){if(!$f->isDot()){ocCopy($f->getPathname(),$target.'/'.$f->getFilename());}}}else{if(!is_dir(dirname($target))){mkdir(dirname($target),0755,true);}copy($source,$target);} }
 $input=$root.'/build/input';$output=$root.'/build/package';ocRemove($input);ocRemove($output);mkdir($input,0755,true);mkdir($output,0755,true);
 $composer=['name'=>'lunixi/opencart4-release-input','require'=>['lunixi/php-sdk'=>'1.0.1'],'config'=>['allow-plugins'=>false,'sort-packages'=>true]];
+$sdkVersion=$composer['require']['lunixi/php-sdk'];
+if(!preg_match('/^(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)$/D',$sdkVersion)){throw new RuntimeException('SDK dependency must be an exact release version.');}
 if($local!==null){$composer['repositories']=[['type'=>'path','url'=>realpath($local),'options'=>['symlink'=>false]]];}
 file_put_contents($input.'/composer.json',json_encode($composer,JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR));
 ocRun(['composer','install','--no-dev','--no-interaction','--prefer-dist','--classmap-authoritative'],$input);
+$lock=json_decode(file_get_contents($input.'/composer.lock'),true,512,JSON_THROW_ON_ERROR);
+$resolved=array_values(array_filter($lock['packages'],static fn(array $package): bool=>$package['name']==='lunixi/php-sdk'));
+if(count($resolved)!==1||!in_array($resolved[0]['version'],[$sdkVersion,'v'.$sdkVersion],true)){throw new RuntimeException('Resolved SDK does not match the exact release dependency.');}
+$installation=json_decode(file_get_contents($root.'/install.json'),true,16,JSON_THROW_ON_ERROR);
+if(($installation['version']??null)!==$moduleVersion){throw new RuntimeException('OpenCart installer version must match VERSION.');}
 foreach(['admin','catalog','system','install.json'] as $part){ocCopy($root.'/'.$part,$output.'/'.$part);}
 $sdk=$input.'/vendor/lunixi/php-sdk';$runtime=$output.'/system/library/lunixi4';
 ocRun([PHP_BINARY,$root.'/tools/vendor/bin/php-scoper','add-prefix','src','--output-dir='.$runtime.'/sdk','--config='.$root.'/scoper.inc.php','--force','--no-interaction'],$sdk);
@@ -25,7 +34,7 @@ if(!is_file($runtime.'/sdk/Commerce/CheckoutService.php')){throw new RuntimeExce
 file_put_contents($runtime.'/.htaccess',"Require all denied\n");
 ocCopy($root.'/docs',$output.'/docs');ocCopy($root.'/.github/assets',$output.'/.github/assets');
 foreach(['README.md','LICENSE','CHANGELOG.md','MIGRATION-1.0.md','SECURITY.md']as$file){if(is_file($root.'/'.$file)){ocCopy($root.'/'.$file,$output.'/'.$file);}}
-file_put_contents($output.'/release.json',json_encode(['module'=>'lunixi-opencart4','version'=>'1.0.0','opencart'=>'4.1.0.4','sdk'=>'1.0.0','php_min'=>'8.3','merchant_composer_required'=>false],JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES));
+file_put_contents($output.'/release.json',json_encode(['module'=>'lunixi-opencart4','version'=>$moduleVersion,'opencart'=>'4.1.0.4','sdk'=>$sdkVersion,'php_min'=>'8.3','merchant_composer_required'=>false],JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES));
 if(!is_dir($root.'/dist')){mkdir($root.'/dist');}
 $target=$root.'/dist/lunixi.ocmod.zip';$zip=new ZipArchive();if($zip->open($target,ZipArchive::CREATE|ZipArchive::OVERWRITE)!==true){throw new RuntimeException('Cannot create native ZIP.');}
 $files=[];foreach(new RecursiveIteratorIterator(new RecursiveDirectoryIterator($output,FilesystemIterator::SKIP_DOTS))as$file){if($file->isFile()){$files[]=$file->getPathname();}}sort($files,SORT_STRING);

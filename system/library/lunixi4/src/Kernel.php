@@ -110,7 +110,7 @@ final class Kernel
     private function service(string $key): CheckoutService
     {
         $credentials = $this->profileFor($key);
-        $client = $this->testClient ?? LunixiClient::create(['baseUrl' => self::origin(), 'keyId' => $credentials['keyId'], 'privateKey' => $credentials['privateKey'], 'maxRetries' => 0, 'timeout' => 30, 'userAgent' => 'lunixi-opencart4/1.0.0']);
+        $client = $this->testClient ?? LunixiClient::create(['baseUrl' => self::origin(), 'keyId' => $credentials['keyId'], 'privateKey' => $credentials['privateKey'], 'maxRetries' => 0, 'timeout' => 30, 'userAgent' => 'lunixi-opencart4/1.0.1']);
         return new CheckoutService($client, $this->store, self::secretBox());
     }
     public function assertConfigured(): void

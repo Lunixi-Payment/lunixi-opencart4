@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.1 — 2026-11-01
+
+- Correct merchant ZIP metadata to record the actual pinned PHP SDK 1.0.1 instead of a stale SDK version. Check the dependency against Composer’s resolved package.
+- Derive the module release version from `VERSION` and verify the artifact metadata; preserve the string-money, checkout, webhook and financial operation behavior.
+
 ## 1.0.0 — 2026-11-01
 
 - Breaking: monetary minor units are canonical integer strings in requests, responses and platform settlement records. Numeric money is rejected; counts, rates and quantities retain their existing types.
