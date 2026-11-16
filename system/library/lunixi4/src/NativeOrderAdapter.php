@@ -7,6 +7,8 @@ use Lunixi\OpenCart4\Vendor\Lunixi\Sdk\Commerce\{Money, OrderSnapshot, PaymentDe
 /** Native order/stock/totals/history application on the ledger's SAME DB connection. */
 final class NativeOrderAdapter
 {
+    /** Decisions that hold or carry buyer money. */
+    private const MONEY_STATES = ['authorized', 'partially_captured', 'paid', 'partially_refunded'];
     private \Opencart\System\Engine\Registry $registry;
     private NativeLedgerStore $store;
     private int $storeId;
@@ -51,6 +53,11 @@ final class NativeOrderAdapter
     {
         $id = $this->store->nativeId($orderKey);
         $order = $this->order($id, true);
+        if ($decision->isLinkedPayment()) {
+            // Another payment of the same order (e.g. a late bank transfer): status and stock stay, the merchant decides.
+            $this->review($orderKey, $id, (int) $order['order_status_id'], PaymentDecision::REVIEW_LINKED_PAYMENT, $decision, (string) $order['currency_code']);
+            return;
+        }
         $record = $this->store->load($orderKey);
         if ($record === null || $this->snapshot($order, (string) $record['snapshot']['merchantId'])->fingerprint() !== OrderSnapshot::fromArray($record['snapshot'])->fingerprint()) {
             throw new \RuntimeException('Native order changed after checkout reservation.');
@@ -72,6 +79,12 @@ final class NativeOrderAdapter
         $manualChange = $application !== [] && (int) $application['native_status_id'] !== $before && !in_array($before, $this->activeStatuses(), true);
         $existingHold = $application !== [] && in_array($application['state'], ['paid', 'partially_refunded'], true) && !in_array($before, $this->activeStatuses(), true);
         $firstManualHold = $application === [] && $before !== 0 && $before !== (int) $config->get('payment_lunixi_pending_status_id');
+        if (in_array($decision->state, self::MONEY_STATES, true) && ($manualChange || $firstManualHold)) {
+            // Money for an order whose status was changed by hand (e.g. cancelled): keep it, flag it, never fulfill.
+            $this->review($orderKey, $id, $before, PaymentDecision::REVIEW_ORDER_CLOSED, $decision, (string) $order['currency_code']);
+            $this->recordApplication($orderKey, $hash, $decision, $before);
+            return;
+        }
         if ($state === 'paid' && ($manualChange || $existingHold || $firstManualHold)) {
             $target = $before;
         }
@@ -90,8 +103,37 @@ final class NativeOrderAdapter
             $this->registry->set('event', $events);
         }
         $actual = (int) $this->order($id)['order_status_id'];
-        $this->store->query('INSERT INTO `' . $this->store->prefix() . 'lunixi_application` (order_key,decision_hash,payment_id,captured_minor,refunded_minor,charged_minor,state,native_status_id) VALUES (' . $this->store->quote($orderKey) . ',' . $this->store->quote($hash) . ',' . $this->store->quote($decision->paymentId) . ',' . $decision->capturedAmount . ',' . $decision->refundedAmount . ',' . $decision->chargedAmount . ',' . $this->store->quote($decision->state) . ',' . $actual . ') ON DUPLICATE KEY UPDATE decision_hash=VALUES(decision_hash),payment_id=VALUES(payment_id),captured_minor=VALUES(captured_minor),refunded_minor=VALUES(refunded_minor),charged_minor=VALUES(charged_minor),state=VALUES(state),native_status_id=VALUES(native_status_id)');
+        $this->recordApplication($orderKey, $hash, $decision, $actual);
         $this->store->query('INSERT INTO `' . $this->store->prefix() . 'lunixi_outbox` (order_key,native_order_id,old_status,new_status,comment_code,created_at) VALUES (' . $this->store->quote($orderKey) . ',' . $id . ',' . $before . ',' . $actual . ',' . $this->store->quote('history_' . $decision->state) . ',' . time() . ')');
+    }
+    private function recordApplication(string $orderKey, string $hash, PaymentDecision $decision, int $nativeStatus): void
+    {
+        $this->store->query('INSERT INTO `' . $this->store->prefix() . 'lunixi_application` (order_key,decision_hash,payment_id,captured_minor,refunded_minor,charged_minor,state,native_status_id) VALUES (' . $this->store->quote($orderKey) . ',' . $this->store->quote($hash) . ',' . $this->store->quote($decision->paymentId) . ',' . $decision->capturedAmount . ',' . $decision->refundedAmount . ',' . $decision->chargedAmount . ',' . $this->store->quote($decision->state) . ',' . $nativeStatus . ') ON DUPLICATE KEY UPDATE decision_hash=VALUES(decision_hash),payment_id=VALUES(payment_id),captured_minor=VALUES(captured_minor),refunded_minor=VALUES(refunded_minor),charged_minor=VALUES(charged_minor),state=VALUES(state),native_status_id=VALUES(native_status_id)');
+    }
+    /**
+     * Visible merchant review: one flag in lunixi_meta and one native history comment
+     * (status unchanged, notify=0, no stock/fraud/mail side effects) per payment balance.
+     */
+    private function review(string $orderKey, int $id, int $status, string $reason, PaymentDecision $decision, string $currency): void
+    {
+        $key = 'review:' . $orderKey . ':' . substr(hash('sha256', implode("\x00", [$reason, $decision->paymentId, $decision->state, $decision->capturedAmount, $decision->refundedAmount])), 0, 32);
+        $value = json_encode(['reason' => $reason, 'paymentId' => $decision->paymentId, 'state' => $decision->state, 'capturedMinor' => $decision->capturedAmount, 'refundedMinor' => $decision->refundedAmount, 'currency' => $currency, 'createdAt' => time()], JSON_THROW_ON_ERROR);
+        $this->store->query('INSERT IGNORE INTO `' . $this->store->prefix() . 'lunixi_meta` (meta_key,value) VALUES (' . $this->store->quote($key) . ',' . $this->store->quote($value) . ')');
+        if ($this->registry->get('db')->countAffected() !== 1) {
+            return;
+        }
+        $this->registry->get('load')->language('extension/lunixi/payment/lunixi');
+        $comment = sprintf((string) $this->registry->get('language')->get('history_review_' . $reason), $decision->paymentId, Money::decimal($decision->capturedAmount, Money::exponent($currency)) . ' ' . $currency);
+        $this->store->query('INSERT INTO `' . $this->store->prefix() . 'order_history` (order_id,order_status_id,notify,comment,date_added) VALUES (' . $id . ',' . $status . ',0,' . $this->store->quote($comment) . ',NOW())');
+    }
+    /**
+     * Payment reviews of a native order for the admin order panel.
+     * @return list<array<string,string>>
+     */
+    public function reviews(int $id): array
+    {
+        $rows = $this->store->query('SELECT value FROM `' . $this->store->prefix() . 'lunixi_meta` WHERE meta_key LIKE ' . $this->store->quote('review:oc4:%:' . $id . ':%') . ' ORDER BY meta_key')->rows;
+        return array_map(static fn(array $row): array => json_decode((string) $row['value'], true, 8, JSON_THROW_ON_ERROR), $rows);
     }
     /** Claim durably BEFORE external mail. Interrupted sending requires operator review, never blind resend. */
     public function deliverNotifications(int $limit = 20): array

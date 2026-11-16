@@ -43,6 +43,7 @@ final class NativeAcceptanceTest extends TestCase
         foreach (['lunixi_attempt', 'lunixi_event', 'lunixi_application', 'lunixi_outbox', 'lunixi_operation', 'lunixi_profile', 'order', 'order_product', 'order_option', 'order_history', 'order_total', 'fraud_ip'] as $table) {
             $db->query('DELETE FROM `' . DB_PREFIX . $table . '`');
         }
+        $db->query('DELETE FROM `' . DB_PREFIX . "lunixi_meta` WHERE meta_key LIKE 'review:%'");
         $db->query("UPDATE `" . DB_PREFIX . "product` SET quantity=10,subtract=1");
         $db->query("DELETE FROM `" . DB_PREFIX . "currency` WHERE code='TRY'");
         $db->query("INSERT INTO `" . DB_PREFIX . "currency` (title,code,symbol_left,symbol_right,decimal_place,value,status,date_modified) VALUES ('Turkish Lira','TRY','','TL','2','1.00000000',1,NOW()) ON DUPLICATE KEY UPDATE decimal_place='2'");
@@ -275,6 +276,67 @@ final class NativeAcceptanceTest extends TestCase
         self::assertSame('rejected', $invalid['state']);
         self::assertCount($before, $this->gateway->keys);
         self::assertSame('confirmed', $this->kernel->operation($id, 'refund', '1.00')['state']);
+    }
+    private function scalar(string $sql): string
+    {
+        return (string) $this->registry->get('db')->query($sql)->row['total'];
+    }
+    public function testLateLinkedPaymentIsReviewedOnceWithoutChangingStatusOrStock(): void
+    {
+        $id = $this->order();
+        $session = $this->kernel->start($id, 'https://merchant.example/return');
+        $this->gateway->payments[$session->paymentId]['data']['status'] = 'EXPIRED';
+        $this->gateway->payments[$session->paymentId]['details']['capturedAmount'] = '0';
+        self::assertSame('failed', $this->kernel->reconcile($id, false)->state);
+        $failed = $this->kernel->orders()->order($id)['order_status_id'];
+        $late = $this->gateway->payments[$session->paymentId];
+        $late['data']['id'] = 'pi-native-late';
+        $late['data']['status'] = 'CAPTURED';
+        $late['details']['capturedAmount'] = '1005';
+        $this->gateway->payments['pi-native-late'] = $late;
+        $key = $this->kernel->orders()->orderKey($id);
+        [$raw, $headers] = $this->event('evt-late', 'pi-native-late', $key);
+        $decision = $this->kernel->webhook($raw, $headers);
+        self::assertTrue($decision->isLinkedPayment());
+        self::assertFalse($decision->isPaid());
+        $this->kernel->webhook($raw, $headers);
+        [$again, $againHeaders] = $this->event('evt-late-again', 'pi-native-late', $key);
+        $this->kernel->webhook($again, $againHeaders);
+        self::assertSame($failed, $this->kernel->orders()->order($id)['order_status_id']);
+        self::assertSame(10, $this->stock());
+        self::assertSame('1', $this->scalar('SELECT COUNT(*) AS total FROM `' . DB_PREFIX . 'order_history` WHERE notify=0 AND order_id=' . $id . " AND comment LIKE '%pi-native-late%'"));
+        self::assertSame($session->paymentId, $this->registry->get('db')->query('SELECT payment_id FROM `' . DB_PREFIX . 'lunixi_application` WHERE order_key=' . $this->kernel->store()->quote($key))->row['payment_id']);
+        self::assertSame('1', $this->scalar('SELECT COUNT(*) AS total FROM `' . DB_PREFIX . 'lunixi_outbox`'));
+        $reviews = $this->kernel->orders()->reviews($id);
+        self::assertCount(1, $reviews);
+        self::assertSame('linked_payment', $reviews[0]['reason']);
+        self::assertSame('1005', $reviews[0]['capturedMinor']);
+        self::assertFalse($this->kernel->browserComplete($id));
+    }
+    public function testMoneyForManuallyCancelledOrderIsFlaggedAndNeverFulfilled(): void
+    {
+        $id = $this->order();
+        $session = $this->kernel->start($id, 'https://merchant.example/return');
+        $this->gateway->payments[$session->paymentId]['data']['status'] = 'PROCESSING';
+        $this->gateway->payments[$session->paymentId]['details']['capturedAmount'] = '0';
+        self::assertSame('pending', $this->kernel->reconcile($id, false)->state);
+        $db = $this->registry->get('db');
+        $db->query('UPDATE `' . DB_PREFIX . 'order` SET order_status_id=7 WHERE order_id=' . $id);
+        $db->query('INSERT INTO `' . DB_PREFIX . 'order_history` (order_id,order_status_id,notify,comment,date_added) VALUES (' . $id . ",7,0,'Cancelled by the merchant',NOW())");
+        $this->gateway->payments[$session->paymentId]['data']['status'] = 'CAPTURED';
+        $this->gateway->payments[$session->paymentId]['details']['capturedAmount'] = '1005';
+        $key = $this->kernel->orders()->orderKey($id);
+        [$raw, $headers] = $this->event('evt-closed', $session->paymentId, $key);
+        self::assertTrue($this->kernel->webhook($raw, $headers)->isPaid());
+        $this->kernel->webhook($raw, $headers);
+        $this->kernel->reconcile($id, false);
+        self::assertSame('7', $this->kernel->orders()->order($id)['order_status_id']);
+        self::assertSame(10, $this->stock());
+        self::assertSame('1', $this->scalar('SELECT COUNT(*) AS total FROM `' . DB_PREFIX . 'order_history` WHERE notify=0 AND order_id=' . $id . ' AND comment LIKE ' . $this->kernel->store()->quote('%' . $session->paymentId . '%')));
+        $reviews = $this->kernel->orders()->reviews($id);
+        self::assertCount(1, $reviews);
+        self::assertSame('order_closed', $reviews[0]['reason']);
+        self::assertFalse($this->kernel->browserComplete($id));
     }
     public function testConcurrentProcessesConsumeEventAndNativeStockExactlyOnce(): void
     {

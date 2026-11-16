@@ -188,7 +188,25 @@ class Lunixi extends \Opencart\System\Engine\Controller
     public function order()
     {
         $this->load->language('extension/lunixi/payment/lunixi');
-        return $this->load->view('extension/lunixi/payment/lunixi_order', ['settings_url' => $this->link('extension/lunixi/payment/lunixi', 'store_id=' . (int) $this->config->get('config_store_id') . '&user_token=' . $this->session->data['user_token'], true), 'text' => $this->language->get('text_order_tools')]);
+        return $this->load->view('extension/lunixi/payment/lunixi_order', ['settings_url' => $this->link('extension/lunixi/payment/lunixi', 'store_id=' . (int) $this->config->get('config_store_id') . '&user_token=' . $this->session->data['user_token'], true), 'text' => $this->language->get('text_order_tools'), 'reviews' => $this->lunixiReviews()]);
+    }
+    /** Payment reviews (late linked payment, money for a manually closed order) shown on the native order page. */
+    private function lunixiReviews(): array
+    {
+        $orderId = (int) ($this->request->get['order_id'] ?? 0);
+        if ($orderId < 1 || !$this->user->hasPermission('access', 'extension/lunixi/payment/lunixi')) {
+            return [];
+        }
+        $reviews = [];
+        try {
+            foreach ($this->kernel()->orders()->reviews($orderId) as $review) {
+                $amount = \Lunixi\OpenCart4\Vendor\Lunixi\Sdk\Commerce\Money::decimal((string) $review['capturedMinor'], \Lunixi\OpenCart4\Vendor\Lunixi\Sdk\Commerce\Money::exponent((string) $review['currency'])) . ' ' . $review['currency'];
+                $reviews[] = sprintf((string) $this->language->get('history_review_' . $review['reason']), (string) $review['paymentId'], $amount);
+            }
+        } catch (\Throwable $error) {
+            return [];
+        }
+        return $reviews;
     }
     private function json(array $data, int $status = 200)
     {

@@ -30,7 +30,7 @@ php tools/vendor/bin/phpstan analyse --no-progress
 composer audit --working-dir=tools
 ```
 
-Official source checkouts need their own `composer install --no-dev` before fixture installation if platform vendor files are absent. Build-time `SDK_SOURCE` may point to a separately checked-out public PHP SDK1.0.1; this never becomes a runtime dependency path.
+Official source checkouts need their own `composer install --no-dev` before fixture installation if platform vendor files are absent. Build-time `SDK_SOURCE` may point to a separately checked-out public PHP SDK 1.6.0; this never becomes a runtime dependency path.
 
 The destructive opt-in permits installation and native test-only engine conversion in the dedicated schema. It is not a production migration command. The fixture installer passes random synthetic credentials in PHP memory to the official installer; it does not put DB passwords in a shell command. Native acceptance includes exact persisted decimal FX/ISO precision, encrypted profiles, MyISAM preflight, rollback after real stock/history writes, signed tamper/replay/collision, concurrent child-process event consumption, native fraud holds, queued capture, delayed confirmation, partial/full refunds/restock, void, overrefund rejection, changed-order browser denial and lost-response webhook recovery. The separate admin process uses real native users/models/controllers/Twig to check install, form, native token, custom nonce, finance permissions and uninstall retention.
 

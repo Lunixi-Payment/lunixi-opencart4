@@ -2,9 +2,9 @@
 
 # OpenCart 4 için Lunixi Payments
 
-1.0.1 kurulum ZIP’ini [GitHub sürümlerinden](https://github.com/Lunixi-Payment/lunixi-opencart4/releases) indirin ve aynı sürümün `SHA256SUMS` dosyasıyla doğrulayın. Paket PHP SDK 1.0.1 gerektirir. [Para sözleşmesi geçişini](../MIGRATION-1.0.md) uygulayın; 0.x ZIP’leri önceki sayısal para sözleşmesini kullanır.
+1.1.0 kurulum ZIP’ini [GitHub sürümlerinden](https://github.com/Lunixi-Payment/lunixi-opencart4/releases) indirin ve aynı sürümün `SHA256SUMS` dosyasıyla doğrulayın. Paket PHP SDK 1.6.0 gerektirir. [Para sözleşmesi geçişini](../MIGRATION-1.0.md) uygulayın; 0.x ZIP’leri önceki sayısal para sözleşmesini kullanır.
 
-**1.0.1**, özgün **OpenCart 4.1.0.4** sipariş modeli için hazırlanmış yerel ödeme eklentisidir. 64 bit PHP **8.3+**, BCMath, cURL, JSON, Sodium, MySQLi ve tüm mağaza tablolarında **InnoDB** gerekir. Paket, ad alanı ayrılmış PHP SDK **1.0.1** içerir; mağazada Composer gerekmez.
+**1.1.0**, özgün **OpenCart 4.1.0.4** sipariş modeli için hazırlanmış yerel ödeme eklentisidir. 64 bit PHP **8.3+**, BCMath, cURL, JSON, Sodium, MySQLi ve tüm mağaza tablolarında **InnoDB** gerekir. Paket, ad alanı ayrılmış PHP SDK **1.6.0** içerir; mağazada Composer gerekmez.
 
 ## Kurulum
 
@@ -34,6 +34,12 @@ Farklı platform sürümü, değiştirilmiş yerel sipariş modeli, MyISAM veya 
 
 Varsayılan gateway `https://api-gateway.lunixi.com` adresidir. Farklı origin yalnız operatörün HTTPS allowlist ortam ayarıyla seçilebilir. Eski ödeme ve iade kayıtları için eski şifreli credential profilleri ile ayrı sunucu anahtarını saklayın; Lunixi tarafında anahtar iptalini bu saklama süresine göre planlayın. Kaldırma işlemi finansal geçmişi, profilleri, işlem kimliklerini, webhook/e-posta kuyruklarını ve özel durumları silmez.
 
+## Para Transferi bekleme süresi
+
+Para Transferi (havale/EFT/FAST) ödemesi, para banka hesabınıza ulaşana kadar 1–3 iş günü işlemde kalır. Bu sürede sipariş ayarladığınız **bekleyen** durumda kalır ve eklenti siparişi iptal etmez. Transfer beklerken siparişi elle iptal etmemenizi öneririz.
+
+Geç gelen bir transfer Lunixi tarafından **aynı sipariş için yeni bir tahsil edilmiş ödeme** olarak kabul edilebilir. Eklenti siparişi bu ödemeyle tamamlamaz: durum ve stok değişmez, müşteriye bildirilmeyen bir sipariş geçmişi yorumu eklenir ve sipariş sayfasında Lunixi inceleme uyarısı görünür. Durumunu elle değiştirdiğiniz (örneğin iptal ettiğiniz) bir siparişe onaylanan para da aynı şekilde işlenir. Webhook onaylanır ve tekrarlanan teslimatlar tek yorum ekler. Ödemeyi elle kabul edin ya da Lunixi panelinden iade edin.
+
 ## Geliştirme ve doğrulama
 
 ```sh
@@ -44,7 +50,7 @@ php tools/check-artifact.php
 composer audit --working-dir=tools
 ```
 
-Varsayılan derleme paket deposundan sabit PHP SDK 1.0.1 kullanır. ZIP içindeki SDK sürümü bu kesin bağımlılıktan türetilir ve Composer’ın çözdüğü paketle doğrulanır; modül sürümü `VERSION` dosyasından alınır. SDK geliştirme değişikliklerini denemek için yalnız derleme sırasında açıkça incelenmiş kaynak `SDK_SOURCE=/absolute/public-sdk-checkout` ile verilebilir. Bu yol ZIP'e yazılmaz. [Gerçek platform testleri](TESTING.md), [operasyon ve veritabanı hazırlığı](OPERATIONS.md), [güvenlik politikası](../SECURITY.md) ve [English README](../README.md) ayrıntıları içerir. Gerçek platform kabulü PHP 8.4.1/MariaDB 11 üzerinde, dış gateway yerine sentetik transport ile yapılır. Marketplace onayı veya canlı banka tahsilatı iddiası yoktur.
+Varsayılan derleme paket deposundan sabit PHP SDK 1.6.0 kullanır. ZIP içindeki SDK sürümü bu kesin bağımlılıktan türetilir ve Composer’ın çözdüğü paketle doğrulanır; modül sürümü `VERSION` dosyasından alınır. SDK geliştirme değişikliklerini denemek için yalnız derleme sırasında açıkça incelenmiş kaynak `SDK_SOURCE=/absolute/public-sdk-checkout` ile verilebilir. Bu yol ZIP'e yazılmaz. [Gerçek platform testleri](TESTING.md), [operasyon ve veritabanı hazırlığı](OPERATIONS.md), [güvenlik politikası](../SECURITY.md) ve [English README](../README.md) ayrıntıları içerir. Gerçek platform kabulü PHP 8.4.1/MariaDB 11 üzerinde, dış gateway yerine sentetik transport ile yapılır. Marketplace onayı veya canlı banka tahsilatı iddiası yoktur.
 
 Eklenti GPL-3.0-or-later, paketlenen PHP SDK MIT lisanslıdır.
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.0 — 2026-11-16
+
+- A late bank transfer that Lunixi accepts as a new captured payment for the same order is now a review instead of a delivery retry loop: the order status and stock stay unchanged, one non-notifying history comment is added and the admin order page shows a Lunixi review notice.
+- Money confirmed for an order whose status was changed by hand (for example cancelled) keeps that status, is never fulfilled and gets the same comment and notice; the webhook is acknowledged.
+- Document the 1–3 business day bank transfer waiting period; the extension does not cancel orders while a transfer is pending.
+- Requires the PHP SDK Commerce change for linked payments (`PaymentDecision::isLinkedPayment()`).
+- Built on PHP SDK 1.6.0.
+
 ## 1.0.1 — 2026-11-01
 
 - Correct merchant ZIP metadata to record the actual pinned PHP SDK 1.0.1 instead of a stale SDK version. Check the dependency against Composer’s resolved package.

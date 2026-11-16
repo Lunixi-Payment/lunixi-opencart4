@@ -4,9 +4,9 @@
 
 # Lunixi Payments for OpenCart 4
 
-Download the 1.0.1 merchant ZIP from [GitHub releases](https://github.com/Lunixi-Payment/lunixi-opencart4/releases) and verify its matching `SHA256SUMS`. This package requires PHP SDK 1.0.1. Follow the [money-string migration](MIGRATION-1.0.md); 0.x ZIPs use the previous numeric-money contract.
+Download the 1.1.0 merchant ZIP from [GitHub releases](https://github.com/Lunixi-Payment/lunixi-opencart4/releases) and verify its matching `SHA256SUMS`. This package requires PHP SDK 1.6.0. Follow the [money-string migration](MIGRATION-1.0.md); 0.x ZIPs use the previous numeric-money contract.
 
-Native payment extension **1.0.1** for **OpenCart 4.1.0.4**. Opens the existing Lunixi form on the merchant website by default, with optional redirect to the validated backend `paymentPageUrl`. Payment methods, eligible meal cards, shopping credit, installments, insurance and multi-card availability remain managed in the Lunixi merchant panel and form. This adapter does not collect card numbers/CVV or duplicate payment-method switches.
+Native payment extension **1.1.0** for **OpenCart 4.1.0.4**. Opens the existing Lunixi form on the merchant website by default, with optional redirect to the validated backend `paymentPageUrl`. Payment methods, eligible meal cards, shopping credit, installments, insurance and multi-card availability remain managed in the Lunixi merchant panel and form. This adapter does not collect card numbers/CVV or duplicate payment-method switches.
 
 [Turkish guide](docs/README.tr.md) · [Documentation](https://docs.lunixi.com/en/sdks/opencart4) · [Source](https://github.com/Lunixi-Payment/lunixi-opencart4)
 
@@ -18,7 +18,7 @@ Native payment extension **1.0.1** for **OpenCart 4.1.0.4**. Opens the existing 
 | PHP | 64-bit **8.3+**, within the platform's supported range |
 | Extensions | `bcmath`, `curl`, `json`, `sodium`, `mysqli` |
 | Database | MySQL/MariaDB, **all shop tables InnoDB**, one native connection |
-| Shared payment core | Namespace-isolated `lunixi/php-sdk` **1.0.1** |
+| Shared payment core | Namespace-isolated `lunixi/php-sdk` **1.6.0** |
 | Local native acceptance | PHP 8.4.1, MariaDB 11, official platform install, offline gateway transport |
 
 Compatibility preflight rejects a different platform version, modified native order model, nontransactional tables, and unreviewed active order/history, total or fraud hooks. Default audited native activity/statistics hooks remain active; native fraud can hold fulfillment even after capture. Third-party themes/extensions require a separate compatibility review. Native recurring/subscription carts are unavailable because automatic recurring billing is not implemented by this extension. This source release does not imply OpenCart Marketplace acceptance or a live merchant certification.
@@ -59,6 +59,12 @@ A lost create response is recoverable only through a verified payment webhook pl
 
 Uninstall disables the method and preserves payment history, encrypted profiles, operation IDs, event inbox, notification outbox and custom statuses. Back up and explicitly plan any later data removal.
 
+## Bank transfer waiting period
+
+A bank transfer (havale/EFT/FAST) payment stays processing for 1–3 business days until the money reaches your bank account. The order keeps the configured **pending** status during that time and the extension never cancels it. Avoid cancelling the order manually while the transfer is pending.
+
+A transfer that arrives late can be accepted by Lunixi as a **new captured payment for the same order**. The extension does not fulfill the order with it: status and stock stay unchanged, a non-notifying order history comment is added and the order page shows a Lunixi review notice. Money confirmed for an order whose status you changed by hand (for example cancelled) is handled the same way. The webhook is acknowledged and repeated deliveries add one comment. Accept the payment manually or refund it from the Lunixi panel.
+
 ## Build and verify
 
 ```sh
@@ -69,7 +75,7 @@ php tools/check-artifact.php
 composer audit --working-dir=tools
 ```
 
-The build pins SDK 1.0.1 and bundles a scoped copy. The ZIP release metadata is derived from that exact dependency, checked against Composer’s resolved package, and uses `VERSION` for the module release. For local development with a reviewed SDK source checkout, provide the explicit `SDK_SOURCE=/absolute/public-sdk-checkout` environment variable; this path is not copied into public artifacts. `php-scoper` and Composer are build tools only. The resulting merchant ZIP is in `dist/`.
+The build pins SDK 1.6.0 and bundles a scoped copy. The ZIP release metadata is derived from that exact dependency, checked against Composer’s resolved package, and uses `VERSION` for the module release. For local development with a reviewed SDK source checkout, provide the explicit `SDK_SOURCE=/absolute/public-sdk-checkout` environment variable; this path is not copied into public artifacts. `php-scoper` and Composer are build tools only. The resulting merchant ZIP is in `dist/`.
 
 [Native acceptance instructions](docs/TESTING.md) install the exact official platform in an isolated schema and test the **built ZIP**, real native models/events/stock and a synthetic external gateway. No production DB or live payment key is used. PHPStan level 5 checks native glue against actual platform classes; the shared core has its own independent suite. CI pins action commits and the platform source SHA.
 

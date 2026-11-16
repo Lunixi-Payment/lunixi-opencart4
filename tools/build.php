@@ -10,7 +10,7 @@ function ocRun(array $command,string $cwd): void { $p=proc_open($command,[STDIN,
 function ocRemove(string $path): void { if (!is_dir($path)) { return; } foreach(new DirectoryIterator($path) as $f) { if($f->isDot()){continue;} if($f->isDir()&&!$f->isLink()){ocRemove($f->getPathname());}else{unlink($f->getPathname());} } rmdir($path); }
 function ocCopy(string $source,string $target): void { if(is_dir($source)){if(!is_dir($target)){mkdir($target,0755,true);}foreach(new DirectoryIterator($source)as$f){if(!$f->isDot()){ocCopy($f->getPathname(),$target.'/'.$f->getFilename());}}}else{if(!is_dir(dirname($target))){mkdir(dirname($target),0755,true);}copy($source,$target);} }
 $input=$root.'/build/input';$output=$root.'/build/package';ocRemove($input);ocRemove($output);mkdir($input,0755,true);mkdir($output,0755,true);
-$composer=['name'=>'lunixi/opencart4-release-input','require'=>['lunixi/php-sdk'=>'1.0.1'],'config'=>['allow-plugins'=>false,'sort-packages'=>true]];
+$composer=['name'=>'lunixi/opencart4-release-input','require'=>['lunixi/php-sdk'=>'1.6.0'],'config'=>['allow-plugins'=>false,'sort-packages'=>true]];
 $sdkVersion=$composer['require']['lunixi/php-sdk'];
 if(!preg_match('/^(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)$/D',$sdkVersion)){throw new RuntimeException('SDK dependency must be an exact release version.');}
 if($local!==null){$composer['repositories']=[['type'=>'path','url'=>realpath($local),'options'=>['symlink'=>false]]];}
